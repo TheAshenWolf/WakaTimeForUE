@@ -19,6 +19,10 @@
 			"Name": "WakaTimeForUE4",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "WakaTimeForUE4Editor",
+			"Type": "Editor"
 		}
 	]
 }
