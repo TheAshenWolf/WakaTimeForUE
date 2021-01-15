@@ -17,6 +17,22 @@ using namespace EAppMsgType;
 
 #define LOCTEXT_NAMESPACE "FWakaTimeForUE4Module"
 
+bool isDeveloper(true);
+bool isDesigner(false);
+string devCategory("coding");
+
+void SetDeveloper() {
+	isDeveloper = true;
+	isDesigner = false;
+	devCategory = "coding";
+}
+
+void SetDesigner() {
+	isDeveloper = false;
+	isDesigner = true;
+	devCategory = "designing";
+}
+
 string GetTime() {
 	const auto now = std::chrono::system_clock::now();
 
@@ -37,10 +53,10 @@ string GetProjectName() {
 	return seglist.back();
 }
 
-string BuildJson(string devCategory, string savedFile) {
+string BuildJson(string currentCategory, string savedFile) {
 	string entity("\"Unreal Engine\""); // "Unreal Engine"
 	string type("\"app\""); // "app"
-	string category("\"" + devCategory + "\""); // eg. "coding"
+	string category("\"" + currentCategory + "\""); // eg. "coding"
 	string time(GetTime()); // 123456789
 	string project("\"" + GetProjectName() + "\""); // "MyProject"
 	string language("\"Unreal Engine\""); // "Unreal Engine"
@@ -85,9 +101,9 @@ void CheckForPython() {
 	_pclose(pipe);
 }
 
-void SendHeartbeatCoding(bool fileSave) {
+void SendHeartbeat(bool fileSave) {
 	FILE* pipe;
-	pipe = _popen("curl -d '" + BuildJson("coding", fileSave ? "true" : "false") + "' -H \"Content-Type:application/json\" -X POST https://wolfwaka.free.beeceptor.com");
+	pipe = _popen("curl -d '" + BuildJson(devCategory, fileSave ? "true" : "false") + "' -H \"Content-Type:application/json\" -X POST https://wolfwaka.free.beeceptor.com");
 
 	// TODO: Handle response
 
