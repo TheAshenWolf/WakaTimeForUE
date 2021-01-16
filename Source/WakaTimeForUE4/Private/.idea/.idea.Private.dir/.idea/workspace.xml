@@ -34,12 +34,13 @@
       <option name="presentableId" value="Default" />
       <updated>1610725593820</updated>
       <workItem from="1610725597034" duration="8000" />
+      <workItem from="1610804007904" duration="38000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="1" />
   </component>
-  <component name="UnityProjectConfiguration" hasMinimizedUI="null" />
+  <component name="UnityProjectConfiguration" hasMinimizedUI="false" />
   <component name="UnityUnitTestConfiguration" currentTestLauncher="NUnit" />
 </project>
