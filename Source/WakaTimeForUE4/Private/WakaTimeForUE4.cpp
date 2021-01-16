@@ -19,6 +19,7 @@ using namespace EAppMsgType;
 bool isDeveloper(true);
 bool isDesigner(false);
 string devCategory("coding");
+string apiKey("");
 
 void SetDeveloper()
 {
@@ -54,17 +55,6 @@ string GetProjectName()
 	}
 
 	return seglist.back();
-}
-
-string BuildJson(string currentCategory, string savedFile)
-{
-	string entity("\"Unreal Engine\"");				// "Unreal Engine"
-	string type("\"app\"");							// "app"
-	string category("\"" + currentCategory + "\""); // eg. "coding"
-	string time(GetTime());							// 123456789
-	string project("\"" + GetProjectName() + "\""); // "MyProject"
-	string language("\"Unreal Engine\"");			// "Unreal Engine"
-	string isWrite(savedFile);						// true
 }
 
 void CheckForPython()
@@ -202,11 +192,21 @@ void SendHeartbeat(bool fileSave, string filePath)
 	string result = "";
 	FILE *pipe;
 
-	pipe = _popen("", "r");
+	string command("wakatime --file " + filePath + " ");
+	if (apiKey != "") {
+		command += "--key " + apiKey + " ";
+	}
+	if (fileSave) {
+		command += "--write "
+	}
+
+	command += "--project " + GetProjectName() + " ";
+	command += "--apikey aeba87d5-dfb5-4df1-9eea-653c87bb350f"; // TODO: REMOVE
+
+	pipe = _popen(command, "r");
 
 	while (!feof(pipe))
 	{
-
 		if (fgets(buffer, 128, pipe) != NULL)
 			result += buffer;
 	}
@@ -216,6 +216,8 @@ void FWakaTimeForUE4Module::StartupModule()
 {
 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
 	CheckForPython();
+	CheckForPip();
+	CheckForWakaTimeCLI();
 }
 
 void FWakaTimeForUE4Module::ShutdownModule()
