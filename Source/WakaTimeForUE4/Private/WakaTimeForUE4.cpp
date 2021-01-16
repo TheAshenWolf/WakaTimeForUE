@@ -11,7 +11,6 @@
 #include <stdio.h>
 #include <chrono>
 
-
 using namespace std;
 using namespace EAppMsgType;
 
@@ -21,93 +20,196 @@ bool isDeveloper(true);
 bool isDesigner(false);
 string devCategory("coding");
 
-void SetDeveloper() {
+void SetDeveloper()
+{
 	isDeveloper = true;
 	isDesigner = false;
 	devCategory = "coding";
 }
 
-void SetDesigner() {
+void SetDesigner()
+{
 	isDeveloper = false;
 	isDesigner = true;
 	devCategory = "designing";
 }
 
-string GetTime() {
+string GetTime()
+{
 	const auto now = std::chrono::system_clock::now();
 
 	return std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
 }
 
-string GetProjectName() {
+string GetProjectName()
+{
 	stringstream projectPath = FPaths::GetProjectFilePath();
 
 	std::string segment;
 	std::vector<std::string> seglist;
 
-	while(std::getline(test, segment, '\\'))
+	while (std::getline(test, segment, '\\'))
 	{
-   		seglist.push_back(segment);
+		seglist.push_back(segment);
 	}
 
 	return seglist.back();
 }
 
-string BuildJson(string currentCategory, string savedFile) {
-	string entity("\"Unreal Engine\""); // "Unreal Engine"
-	string type("\"app\""); // "app"
+string BuildJson(string currentCategory, string savedFile)
+{
+	string entity("\"Unreal Engine\"");				// "Unreal Engine"
+	string type("\"app\"");							// "app"
 	string category("\"" + currentCategory + "\""); // eg. "coding"
-	string time(GetTime()); // 123456789
+	string time(GetTime());							// 123456789
 	string project("\"" + GetProjectName() + "\""); // "MyProject"
-	string language("\"Unreal Engine\""); // "Unreal Engine"
-	string isWrite(savedFile); // true
-
-	string json = "{";								// {
-	json.append("\"entity\":" + entity + ","; 		// 	   "entity":"Unreal Engine",
-	json.append("\"type\":" + type + ",");			// 	   "type":"app",
-	json.append("\"category\":" + category + ",");	// 	   "category":"coding",
-	json.append("\"time\":" + time + ",");			//     "time":123456789,
-	json.append("\"project\":" + project + ",");	//     "project":"MyProject",
-	json.append("\"language\":" + language + ",");  //     "language":"Unreal Engine",
-	json.append("\"is_write\":" + isWrite);			//     "is_write":true
-	json.append("}");								// }
+	string language("\"Unreal Engine\"");			// "Unreal Engine"
+	string isWrite(savedFile);						// true
 }
 
-void CheckForPython() {
+void CheckForPython()
+{
 	UE_LOG(LogTemp, Warning, TEXT("Checking Python installation..."));
 	char buffer[128];
 	string result = "";
-	string py = "Python";
-	FILE* pipe;
+	string winPy = "not recognized";
+	string unixPy = "not found";
+	FILE *pipe;
 
 	pipe = _popen("python --version", "r");
 
-	while (!feof(pipe)) {
+	while (!feof(pipe))
+	{
 
 		if (fgets(buffer, 128, pipe) != NULL)
 			result += buffer;
 	}
 
-	if (result.find(py) != std::string::npos) {
+	if (result.find(winPy) == std::string::npos && result.find(unixPy) == std::string::npos)
+	{
 		UE_LOG(LogTemp, Warning, TEXT("Python found."));
 	}
-	else {
+	else
+	{
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__) // If windows
 		UE_LOG(LogTemp, Error, TEXT("Python not found. Please, install it and restart the editor."));
 		_pclose(_popen("python", "r")); // Opens Microsoft Store
 		FMessageDialog::Open(Ok, FText::FromString("Python not found. Please, install it and restart the editor."));
 		FGenericPlatformMisc::RequestExit(false); // Quits the editor
+#endif
+
+#ifdef __unix__ // If Mac or Linux
+		UE_LOG(LogTemp, Error, TEXT("Python not found. Please, install it and restart the editor."));
+		FMessageDialog::Open(Ok, FText::FromString("Python not found. Please, install it and restart the editor."));
+		FGenericPlatformMisc::RequestExit(false);															 // Quits the editor
+		system("gnome-terminal -x sh -c 'echo sudo apt-get install python3; sudo apt-get install python3'"); // Starts terminal and runs a command prompting user for password
+#else																										 // Else...
+		UE_LOG(LogTemp, Error, TEXT("Python not found. Please, install it and restart the editor."));
+		FMessageDialog::Open(Ok, FText::FromString("Python not found. Please, install it and restart the editor."));
+		FGenericPlatformMisc::RequestExit(false); // Quits the editor
+#endif
 	}
 
 	_pclose(pipe);
 }
 
-void SendHeartbeat(bool fileSave) {
-	FILE* pipe;
-	pipe = _popen("curl -d '" + BuildJson(devCategory, fileSave ? "true" : "false") + "' -H \"Content-Type:application/json\" -X POST https://wolfwaka.free.beeceptor.com");
+void CheckForPip()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Checking Pip installation..."));
+	char buffer[128];
+	string result = "";
+	string winPip = "not recognized";
+	string unixPip = "not found";
+	FILE *pipe;
 
-	// TODO: Handle response
+	pipe = _popen("pip help", "r");
+
+	while (!feof(pipe))
+	{
+
+		if (fgets(buffer, 128, pipe) != NULL)
+			result += buffer;
+	}
+
+	if (result.find(winPip) == std::string::npos && result.find(unixPip) == std::string::npos)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Pip found."));
+	}
+	else
+	{
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__) // If windows
+		UE_LOG(LogTemp, Warning, TEXT("Installing Pip..."));
+		_pclose(_popen("python ../../../Resources/get-pip.py", "r"));
+#endif
+
+#ifdef __unix__ // If Mac or Linux
+		UE_LOG(LogTemp, Warning, TEXT("Installing Pip..."));
+		system("gnome-terminal -x sh -c 'echo sudo apt-get install python3-pip; sudo apt-get install python3-pip'");
+#else // Else...
+		UE_LOG(LogTemp, Warning, TEXT("Installing Pip..."));
+		_pclose(_popen("python ../../../Resources/get-pip.py", "r"));
+#endif
+	}
 
 	_pclose(pipe);
+}
+
+void CheckForWakaTimeCLI()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Checking WakaTimeCLI installation..."));
+
+	bool cliPresent = false;
+
+	FILE *file;
+	if (file = fopen("../../../Resources/wakatime/cli.py", "r"))
+	{
+		fclose(file);
+		cliPresent = true;
+	}
+	else
+	{
+		cliPresent = false;
+	}
+
+	if (cliPresent)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("CLI found."));
+	}
+	else
+	{
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__) // If windows
+		UE_LOG(LogTemp, Warning, TEXT("Installing WakaTimeCLI..."));
+		_pclose(_popen("pip install wakatime", "r"));
+#endif
+
+#ifdef __unix__ // If Mac or Linux
+		UE_LOG(LogTemp, Warning, TEXT("Installing WakaTimeCLI..."));
+		system("gnome-terminal -x sh -c 'pip install wakatime'");
+#else // Else...
+		UE_LOG(LogTemp, Warning, TEXT("Installing WakaTimeCLI..."));
+		_pclose(_popen("pip install wakatime", "r"));
+#endif
+	}
+
+	_pclose(pipe);
+}
+
+void SendHeartbeat(bool fileSave, string filePath)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Sending Heartbeat"));
+
+	char buffer[128];
+	string result = "";
+	FILE *pipe;
+
+	pipe = _popen("", "r");
+
+	while (!feof(pipe))
+	{
+
+		if (fgets(buffer, 128, pipe) != NULL)
+			result += buffer;
+	}
 }
 
 void FWakaTimeForUE4Module::StartupModule()
@@ -123,5 +225,5 @@ void FWakaTimeForUE4Module::ShutdownModule()
 }
 
 #undef LOCTEXT_NAMESPACE
-	
+
 IMPLEMENT_MODULE(FWakaTimeForUE4Module, WakaTimeForUE4)
