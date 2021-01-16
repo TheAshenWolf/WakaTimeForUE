@@ -174,7 +174,9 @@ void CheckForWakaTimeCLI()
 
 #ifdef __unix__ // If Mac or Linux
 		UE_LOG(LogTemp, Warning, TEXT("Installing WakaTimeCLI..."));
-		system("gnome-terminal -x sh -c 'pip install wakatime'");
+		system("gnome-terminal -x sh -c 'echo sudo pip install wakatime; sudo pip install wakatime'");
+		system("gnome-terminal -x sh -c 'cd ../../../Resources/bash-wakatime");
+		system("gnome-terminal -x sh -c 'source ./bash-wakatime.sh'");
 #else // Else...
 		UE_LOG(LogTemp, Warning, TEXT("Installing WakaTimeCLI..."));
 		_pclose(_popen("pip install wakatime", "r"));
@@ -201,7 +203,7 @@ void SendHeartbeat(bool fileSave, string filePath)
 	}
 
 	command += "--project " + GetProjectName() + " ";
-	command += "--apikey aeba87d5-dfb5-4df1-9eea-653c87bb350f"; // TODO: REMOVE
+	command += "--key aeba87d5-dfb5-4df1-9eea-653c87bb350f"; // TODO: REMOVE
 
 	pipe = _popen(command, "r");
 
