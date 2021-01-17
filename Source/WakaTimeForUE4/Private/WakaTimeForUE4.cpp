@@ -10,6 +10,8 @@
 #include <stdexcept>
 #include <stdio.h>
 #include <chrono>
+#include <vector>
+#include <sstream>
 
 using namespace std;
 using namespace EAppMsgType;
@@ -35,22 +37,22 @@ void SetDesigner()
 	devCategory = "designing";
 }
 
-string GetTime()
-{
-	const auto now = std::chrono::system_clock::now();
-
-	return std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
-}
-
 string GetProjectName()
 {
-	stringstream projectPath = FPaths::GetProjectFilePath();
+	FString projectPath = FPaths::GetProjectFilePath();
 
 	std::string segment;
 	std::vector<std::string> seglist;
+	size_t pos = 0;
+	std::string token;
+	std::string delimiter("\\");
+	std::string path = std::string(TCHAR_TO_UTF8(*projectPath));
 
-	while (std::getline(test, segment, '\\'))
-	{
+	while ((pos = path.find(delimiter)) != std::string::npos) {
+		token = path.substr(0, pos);
+		std::cout << token << std::endl;
+		path.erase(0, pos + delimiter.length());
+	
 		seglist.push_back(segment);
 	}
 
@@ -81,18 +83,17 @@ void CheckForPython()
 	}
 	else
 	{
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__) // If windows
-		UE_LOG(LogTemp, Error, TEXT("Python not found. Please, install it and restart the editor."));
-		_pclose(_popen("python", "r")); // Opens Microsoft Store
-		FMessageDialog::Open(Ok, FText::FromString("Python not found. Please, install it and restart the editor."));
-		FGenericPlatformMisc::RequestExit(false); // Quits the editor
-#endif
 
 #ifdef __unix__ // If Mac or Linux
 		UE_LOG(LogTemp, Error, TEXT("Python not found. Please, install it and restart the editor."));
 		FMessageDialog::Open(Ok, FText::FromString("Python not found. Please, install it and restart the editor."));
 		FGenericPlatformMisc::RequestExit(false);															 // Quits the editor
 		system("gnome-terminal -x sh -c 'echo sudo apt-get install python3; sudo apt-get install python3'"); // Starts terminal and runs a command prompting user for password
+#elif defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__) // If windows
+			UE_LOG(LogTemp, Error, TEXT("Python not found. Please, install it and restart the editor."));
+		_pclose(_popen("python", "r")); // Opens Microsoft Store
+		FMessageDialog::Open(Ok, FText::FromString("Python not found. Please, install it and restart the editor."));
+		FGenericPlatformMisc::RequestExit(false); // Quits the editor
 #else																										 // Else...
 		UE_LOG(LogTemp, Error, TEXT("Python not found. Please, install it and restart the editor."));
 		FMessageDialog::Open(Ok, FText::FromString("Python not found. Please, install it and restart the editor."));
@@ -127,14 +128,12 @@ void CheckForPip()
 	}
 	else
 	{
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__) // If windows
-		UE_LOG(LogTemp, Warning, TEXT("Installing Pip..."));
-		_pclose(_popen("python ../../../Resources/get-pip.py", "r"));
-#endif
-
 #ifdef __unix__ // If Mac or Linux
 		UE_LOG(LogTemp, Warning, TEXT("Installing Pip..."));
 		system("gnome-terminal -x sh -c 'echo sudo apt-get install python3-pip; sudo apt-get install python3-pip'");
+#elif defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__) // If windows
+		UE_LOG(LogTemp, Warning, TEXT("Installing Pip..."));
+		_pclose(_popen("python ../../../Resources/get-pip.py", "r"));
 #else // Else...
 		UE_LOG(LogTemp, Warning, TEXT("Installing Pip..."));
 		_pclose(_popen("python ../../../Resources/get-pip.py", "r"));
@@ -167,23 +166,19 @@ void CheckForWakaTimeCLI()
 	}
 	else
 	{
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__) // If windows
-		UE_LOG(LogTemp, Warning, TEXT("Installing WakaTimeCLI..."));
-		_pclose(_popen("pip install wakatime", "r"));
-#endif
-
 #ifdef __unix__ // If Mac or Linux
 		UE_LOG(LogTemp, Warning, TEXT("Installing WakaTimeCLI..."));
 		system("gnome-terminal -x sh -c 'echo sudo pip install wakatime; sudo pip install wakatime'");
 		system("gnome-terminal -x sh -c 'cd ../../../Resources/bash-wakatime");
 		system("gnome-terminal -x sh -c 'source ./bash-wakatime.sh'");
+#elif defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__) // If windows
+		UE_LOG(LogTemp, Warning, TEXT("Installing WakaTimeCLI..."));
+		_pclose(_popen("pip install wakatime", "r"));
 #else // Else...
 		UE_LOG(LogTemp, Warning, TEXT("Installing WakaTimeCLI..."));
 		_pclose(_popen("pip install wakatime", "r"));
 #endif
 	}
-
-	_pclose(pipe);
 }
 
 void SendHeartbeat(bool fileSave, string filePath)
@@ -199,13 +194,13 @@ void SendHeartbeat(bool fileSave, string filePath)
 		command += "--key " + apiKey + " ";
 	}
 	if (fileSave) {
-		command += "--write "
+		command += "--write ";
 	}
 
 	command += "--project " + GetProjectName() + " ";
 	command += "--key aeba87d5-dfb5-4df1-9eea-653c87bb350f"; // TODO: REMOVE
 
-	pipe = _popen(command, "r");
+	pipe = _popen(command.c_str(), "r");
 
 	while (!feof(pipe))
 	{
