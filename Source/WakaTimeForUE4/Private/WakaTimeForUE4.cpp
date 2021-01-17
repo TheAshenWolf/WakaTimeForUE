@@ -4,6 +4,7 @@
 #include "GenericPlatform/GenericPlatformMisc.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/Paths.h"
+#include "Editor.h"
 #include <string>
 #include <array>
 #include <iostream>
@@ -22,6 +23,7 @@ bool isDeveloper(true);
 bool isDesigner(false);
 string devCategory("coding");
 string apiKey("");
+FDelegateHandle ActorDragged;
 
 void SetDeveloper()
 {
@@ -150,7 +152,8 @@ void CheckForWakaTimeCLI()
 	bool cliPresent = false;
 
 	FILE *file;
-	if (file = fopen("../../../Resources/wakatime/cli.py", "r"))
+	file = fopen("../../../Resources/wakatime/cli.py", "r");
+	if (file)
 	{
 		fclose(file);
 		cliPresent = true;
@@ -209,18 +212,35 @@ void SendHeartbeat(bool fileSave, string filePath)
 	}
 }
 
+
+
+
+void AddListeners() {
+	ActorDragged = FEditorDelegates::OnNewActorsDropped.AddRaw(this, &FWakaTimeForUE4Module::OnActorDragged);
+}
+
 void FWakaTimeForUE4Module::StartupModule()
 {
 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
 	CheckForPython();
 	CheckForPip();
 	CheckForWakaTimeCLI();
+
+	AddListeners();
+
+	//FEditorDelegates::FOnNewActorsDropped::AddRaw(this, OnNewActorsDropped);
 }
 
 void FWakaTimeForUE4Module::ShutdownModule()
 {
+
+	FEditorDelegates::OnNewActorsDropped.Remove(ActorDragged);
 	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
 	// we call this function before unloading the module.
+}
+
+void FWakaTimeForUE4Module::OnActorDragged(const TArray<UObject*>& Objects, const TArray<AActor*>& Actors) {
+	UE_LOG(LogTemp, Warning, TEXT("Actor Dropped."));
 }
 
 #undef LOCTEXT_NAMESPACE
