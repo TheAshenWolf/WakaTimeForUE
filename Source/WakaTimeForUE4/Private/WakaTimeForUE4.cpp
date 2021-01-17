@@ -213,12 +213,6 @@ void SendHeartbeat(bool fileSave, string filePath)
 }
 
 
-
-
-void AddListeners() {
-	ActorDragged = FEditorDelegates::OnNewActorsDropped.AddRaw(this, &FWakaTimeForUE4Module::OnActorDragged);
-}
-
 void FWakaTimeForUE4Module::StartupModule()
 {
 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
@@ -226,7 +220,8 @@ void FWakaTimeForUE4Module::StartupModule()
 	CheckForPip();
 	CheckForWakaTimeCLI();
 
-	AddListeners();
+	// Add Listeners
+	ActorDragged = FEditorDelegates::OnNewActorsDropped.AddRaw(this, &FWakaTimeForUE4Module::OnActorDragged);
 
 	//FEditorDelegates::FOnNewActorsDropped::AddRaw(this, OnNewActorsDropped);
 }

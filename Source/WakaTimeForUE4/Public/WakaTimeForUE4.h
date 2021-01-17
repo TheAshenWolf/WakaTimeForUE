@@ -13,6 +13,5 @@ public:
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 	void OnActorDragged(const TArray<UObject*>& Objects, const TArray<AActor*>& Actors);
-	void AddListeners();
 };
 
