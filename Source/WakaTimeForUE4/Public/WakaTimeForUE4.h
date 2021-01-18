@@ -12,6 +12,10 @@ public:
 	/** IModuleInterface implementation */
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
-	void OnActorDragged(const TArray<UObject*>& Objects, const TArray<AActor*>& Actors);
+	void OnNewActorDropped(const TArray<UObject*>& Objects, const TArray<AActor*>& Actors);
+	void OnDuplicateActorsEnd();
+	void OnDeleteActorsEnd();
+	void OnAddLevelToWorld(ULevel* Level);
+	void OnPostSaveWorld(uint32 SaveFlags, UWorld* World, bool bSucces);
 };
 

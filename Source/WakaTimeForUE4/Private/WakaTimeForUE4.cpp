@@ -1,18 +1,21 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
-#include "WakaTimeForUE4.h"
 #include "GenericPlatform/GenericPlatformMisc.h"
 #include "Misc/MessageDialog.h"
+#include "Misc/CoreDelegates.h"
+#include "WakaTimeForUE4.h"
 #include "Misc/Paths.h"
 #include "Editor.h"
-#include <string>
-#include <array>
-#include <iostream>
+
 #include <stdexcept>
+#include <iostream>
 #include <stdio.h>
+#include <sstream>
+#include <string>
 #include <chrono>
 #include <vector>
-#include <sstream>
+#include <array>
+
 
 using namespace std;
 using namespace EAppMsgType;
@@ -23,7 +26,13 @@ bool isDeveloper(true);
 bool isDesigner(false);
 string devCategory("coding");
 string apiKey("");
-FDelegateHandle ActorDragged;
+
+// Handles
+FDelegateHandle NewActorsDroppedHandle;
+FDelegateHandle DeleteActorsEndHandle;
+FDelegateHandle DuplicateActorsEndHandle;
+FDelegateHandle AddLevelToWorldHandle;
+FDelegateHandle PostSaveWorldHandle;
 
 void SetDeveloper()
 {
@@ -184,7 +193,7 @@ void CheckForWakaTimeCLI()
 	}
 }
 
-void SendHeartbeat(bool fileSave, string filePath)
+void SendHeartbeat(bool fileSave, std::string filePath)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Sending Heartbeat"));
 
@@ -212,6 +221,11 @@ void SendHeartbeat(bool fileSave, string filePath)
 	}
 }
 
+void SendHeartbeat(bool fileSave, FString filepath) {
+	std::string path(TCHAR_TO_UTF8(*filepath));
+	SendHeartbeat(fileSave, path);
+}
+
 
 void FWakaTimeForUE4Module::StartupModule()
 {
@@ -221,7 +235,11 @@ void FWakaTimeForUE4Module::StartupModule()
 	CheckForWakaTimeCLI();
 
 	// Add Listeners
-	ActorDragged = FEditorDelegates::OnNewActorsDropped.AddRaw(this, &FWakaTimeForUE4Module::OnActorDragged);
+	NewActorsDroppedHandle = FEditorDelegates::OnNewActorsDropped.AddRaw(this, &FWakaTimeForUE4Module::OnNewActorDropped);
+	DeleteActorsEndHandle = FEditorDelegates::OnDeleteActorsEnd.AddRaw(this, &FWakaTimeForUE4Module::OnDeleteActorsEnd);
+	DuplicateActorsEndHandle = FEditorDelegates::OnDuplicateActorsEnd.AddRaw(this, &FWakaTimeForUE4Module::OnDuplicateActorsEnd);
+	AddLevelToWorldHandle = FEditorDelegates::OnAddLevelToWorld.AddRaw(this, &FWakaTimeForUE4Module::OnAddLevelToWorld);
+	PostSaveWorldHandle = FEditorDelegates::PostSaveWorld.AddRaw(this, &FWakaTimeForUE4Module::OnPostSaveWorld);
 
 	//FEditorDelegates::FOnNewActorsDropped::AddRaw(this, OnNewActorsDropped);
 }
@@ -229,13 +247,31 @@ void FWakaTimeForUE4Module::StartupModule()
 void FWakaTimeForUE4Module::ShutdownModule()
 {
 
-	FEditorDelegates::OnNewActorsDropped.Remove(ActorDragged);
+	FEditorDelegates::OnNewActorsDropped.Remove(NewActorsDroppedHandle);
 	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
 	// we call this function before unloading the module.
 }
 
-void FWakaTimeForUE4Module::OnActorDragged(const TArray<UObject*>& Objects, const TArray<AActor*>& Actors) {
+void FWakaTimeForUE4Module::OnNewActorDropped(const TArray<UObject*>& Objects, const TArray<AActor*>& Actors) {
 	UE_LOG(LogTemp, Warning, TEXT("Actor Dropped."));
+}
+
+void FWakaTimeForUE4Module::OnDuplicateActorsEnd() {
+
+}
+
+void FWakaTimeForUE4Module::OnDeleteActorsEnd() {
+
+}
+
+void FWakaTimeForUE4Module::OnAddLevelToWorld(ULevel* Level) {
+
+}
+
+void FWakaTimeForUE4Module::OnPostSaveWorld(uint32 SaveFlags, UWorld* World, bool bSucces) {
+	FString fileName(World->GetFName().ToString());
+	UE_LOG(LogTemp, Warning, TEXT("Actor Dropped."));
+	SendHeartbeat(true, fileName);
 }
 
 #undef LOCTEXT_NAMESPACE
