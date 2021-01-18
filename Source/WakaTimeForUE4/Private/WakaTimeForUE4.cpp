@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 #include "WakaTimeForUE4.h"
 
+#include "Framework/Application/SlateApplication.h"
 #include "GenericPlatform/GenericPlatformMisc.h"
 #include "Templates/SharedPointer.h"
 #include "Misc/MessageDialog.h"
@@ -17,6 +18,7 @@
 #include <chrono>
 #include <vector>
 #include <array>
+#include <Editor/MainFrame/Public/Interfaces/IMainFrameModule.h>
 
 
 using namespace std;
@@ -35,7 +37,6 @@ FDelegateHandle DeleteActorsEndHandle;
 FDelegateHandle DuplicateActorsEndHandle;
 FDelegateHandle AddLevelToWorldHandle;
 FDelegateHandle PostSaveWorldHandle;
-
 
 void WakaCommands::RegisterCommands()
 {
@@ -283,15 +284,15 @@ void FWakaTimeForUE4Module::OnNewActorDropped(const TArray<UObject*>& Objects, c
 }
 
 void FWakaTimeForUE4Module::OnDuplicateActorsEnd() {
-
+	UE_LOG(LogTemp, Warning, TEXT("Actor duplicated."));
 }
 
 void FWakaTimeForUE4Module::OnDeleteActorsEnd() {
-
+	UE_LOG(LogTemp, Warning, TEXT("Actor deleted."));
 }
 
 void FWakaTimeForUE4Module::OnAddLevelToWorld(ULevel* Level) {
-
+	UE_LOG(LogTemp, Warning, TEXT("Added level to world."));
 }
 
 void FWakaTimeForUE4Module::OnPostSaveWorld(uint32 SaveFlags, UWorld* World, bool bSucces)
@@ -303,6 +304,53 @@ void FWakaTimeForUE4Module::OnPostSaveWorld(uint32 SaveFlags, UWorld* World, boo
 
 void FWakaTimeForUE4Module::TestAction() {
 	UE_LOG(LogTemp, Warning, TEXT("Waka Waka, Eh eh!"));
+
+	FMargin baseMargin;
+	baseMargin.Left = 100;
+	baseMargin.Right = 100;
+
+	TSharedRef<SWindow> SettingsWindow = SNew(SWindow)
+		.Title(FText::FromString(TEXT("WakaTime Settings")))
+		.ClientSize(FVector2D(800, 400))
+		.SupportsMaximize(false)
+		.SupportsMinimize(false)
+		[
+			SNew(SVerticalBox)
+			+ SVerticalBox::Slot()
+			.HAlign(HAlign_Center)
+			.VAlign(VAlign_Center)
+				[
+					SNew(STextBlock)
+					.Text(FText::FromString(TEXT("Yeet")))
+				]
+			+ SVerticalBox::Slot()
+			.HAlign(HAlign_Center)
+			.VAlign(VAlign_Top)
+				[
+					SNew(STextBlock)
+					.Text(FText::FromString(TEXT("Your api key:")))
+				]
+			+ SVerticalBox::Slot()
+			.HAlign(HAlign_Center)
+			.VAlign(VAlign_Top)
+				[
+				SNew(SEditableTextBox).Padding(baseMargin)
+					.Text(FText::FromString(FString(UTF8_TO_TCHAR(apiKey.c_str()))))
+				]
+		];
+	IMainFrameModule& MainFrameModule =
+		FModuleManager::LoadModuleChecked<IMainFrameModule>(TEXT
+		("MainFrame"));
+	if (MainFrameModule.GetParentWindow().IsValid())
+	{
+		FSlateApplication::Get().AddWindowAsNativeChild
+		(SettingsWindow, MainFrameModule.GetParentWindow()
+			.ToSharedRef());
+	}
+	else
+	{
+		FSlateApplication::Get().AddWindow(SettingsWindow);
+	}
 }
 
 void FWakaTimeForUE4Module::AddToolbarButton(FToolBarBuilder& Builder)

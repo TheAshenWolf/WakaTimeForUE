@@ -43,4 +43,3 @@ public:
 
 	TSharedPtr<FUICommandInfo> TestCommand;
 };
-
