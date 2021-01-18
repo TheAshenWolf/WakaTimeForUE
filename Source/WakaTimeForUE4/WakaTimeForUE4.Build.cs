@@ -38,7 +38,9 @@ public class WakaTimeForUE4 : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
-				"UnrealEd"
+				"UnrealEd",
+				"LevelEditor",
+				"EditorStyle"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

@@ -1,9 +1,11 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
+#include "WakaTimeForUE4.h"
 
 #include "GenericPlatform/GenericPlatformMisc.h"
+#include "Templates/SharedPointer.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/CoreDelegates.h"
-#include "WakaTimeForUE4.h"
+#include "LevelEditor.h"
 #include "Misc/Paths.h"
 #include "Editor.h"
 
@@ -33,6 +35,14 @@ FDelegateHandle DeleteActorsEndHandle;
 FDelegateHandle DuplicateActorsEndHandle;
 FDelegateHandle AddLevelToWorldHandle;
 FDelegateHandle PostSaveWorldHandle;
+
+
+void WakaCommands::RegisterCommands()
+{
+	UI_COMMAND(TestCommand, "Waka Time", "Waka time settings", EUserInterfaceActionType::Button, FInputGesture());
+}
+
+
 
 void SetDeveloper()
 {
@@ -157,22 +167,20 @@ void CheckForPip()
 void CheckForWakaTimeCLI()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Checking WakaTimeCLI installation..."));
+	char buffer[128];
+	string result = "";
+	FILE* pipe;
 
-	bool cliPresent = false;
+	pipe = _popen("wakatime -h", "r");
 
-	FILE *file;
-	file = fopen("../../../Resources/wakatime/cli.py", "r");
-	if (file)
+	while (!feof(pipe))
 	{
-		fclose(file);
-		cliPresent = true;
-	}
-	else
-	{
-		cliPresent = false;
+
+		if (fgets(buffer, 128, pipe) != NULL)
+			result += buffer;
 	}
 
-	if (cliPresent)
+	if (result.find("usage: wakatime") == std::string::npos)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("CLI found."));
 	}
@@ -241,7 +249,25 @@ void FWakaTimeForUE4Module::StartupModule()
 	AddLevelToWorldHandle = FEditorDelegates::OnAddLevelToWorld.AddRaw(this, &FWakaTimeForUE4Module::OnAddLevelToWorld);
 	PostSaveWorldHandle = FEditorDelegates::PostSaveWorld.AddRaw(this, &FWakaTimeForUE4Module::OnPostSaveWorld);
 
-	//FEditorDelegates::FOnNewActorsDropped::AddRaw(this, OnNewActorsDropped);
+	WakaCommands::Register();
+
+	PluginCommands = MakeShareable(new FUICommandList);
+	PluginCommands->MapAction(
+		WakaCommands::Get().TestCommand,
+		FExecuteAction::CreateRaw(this, &FWakaTimeForUE4Module::TestAction)
+	);
+
+	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
+
+	{
+		TSharedPtr<FExtender> NewToolbarExtender = MakeShareable(new FExtender);
+
+		NewToolbarExtender->AddToolBarExtension("Content",
+			EExtensionHook::Before,
+			PluginCommands,
+			FToolBarExtensionDelegate::CreateRaw(this, &FWakaTimeForUE4Module::AddToolbarButton));
+		LevelEditorModule.GetToolBarExtensibilityManager()->AddExtender(NewToolbarExtender);
+	}
 }
 
 void FWakaTimeForUE4Module::ShutdownModule()
@@ -268,11 +294,22 @@ void FWakaTimeForUE4Module::OnAddLevelToWorld(ULevel* Level) {
 
 }
 
-void FWakaTimeForUE4Module::OnPostSaveWorld(uint32 SaveFlags, UWorld* World, bool bSucces) {
-	FString fileName(World->GetFName().ToString());
-	UE_LOG(LogTemp, Warning, TEXT("Actor Dropped."));
-	SendHeartbeat(true, fileName);
+void FWakaTimeForUE4Module::OnPostSaveWorld(uint32 SaveFlags, UWorld* World, bool bSucces)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Save world."));
+	/*FString fileName(World->GetFName().ToString());
+	SendHeartbeat(true, fileName);*/
 }
+
+void FWakaTimeForUE4Module::TestAction() {
+	UE_LOG(LogTemp, Warning, TEXT("Waka Waka, Eh eh!"));
+}
+
+void FWakaTimeForUE4Module::AddToolbarButton(FToolBarBuilder& Builder)
+{
+	Builder.AddToolBarButton(WakaCommands::Get().TestCommand);
+}
+
 
 #undef LOCTEXT_NAMESPACE
 

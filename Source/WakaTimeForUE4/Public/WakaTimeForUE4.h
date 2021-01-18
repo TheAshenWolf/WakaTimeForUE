@@ -17,5 +17,30 @@ public:
 	void OnDeleteActorsEnd();
 	void OnAddLevelToWorld(ULevel* Level);
 	void OnPostSaveWorld(uint32 SaveFlags, UWorld* World, bool bSucces);
+	void TestAction();
+	void AddToolbarButton(FToolBarBuilder& Builder);
+
+	TSharedPtr<FUICommandList> PluginCommands;
+	TSharedPtr<FUICommandInfo> WakaButton;
+};
+
+class WakaCommands : public TCommands<WakaCommands>
+{
+public:
+
+	WakaCommands()
+		: TCommands<WakaCommands>
+		(
+			TEXT("TutorialPluginEditor"),
+			NSLOCTEXT("Contexts", "TutorialPluginEditor", "TutorialPluginEditor Plugin"),
+			NAME_None,
+			FEditorStyle::GetStyleSetName()
+			) {}
+
+	virtual void RegisterCommands() override;
+
+public:
+
+	TSharedPtr<FUICommandInfo> TestCommand;
 };
 
