@@ -124,10 +124,6 @@ void SendHeartbeat(bool fileSave, std::string filePath)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Sending Heartbeat"));
 
-	char buffer[128];
-	string result = "";
-	FILE *pipe;
-
 	string command("wakatime --file " + filePath + " ");
 	if (apiKey != "") {
 		command += "--key " + apiKey + " ";
@@ -139,13 +135,8 @@ void SendHeartbeat(bool fileSave, std::string filePath)
 	command += "--project " + GetProjectName() + " ";
 	command += "--key aeba87d5-dfb5-4df1-9eea-653c87bb350f"; // TODO: REMOVE
 
-	pipe = _popen(command.c_str(), "r");
-
-	while (!feof(pipe))
-	{
-		if (fgets(buffer, 128, pipe) != NULL)
-			result += buffer;
-	}
+	//_pclose(_popen(command.c_str(), "r"));
+	system(command.c_str());
 }
 
 void SendHeartbeat(bool fileSave, FString filepath) {
