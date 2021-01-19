@@ -343,35 +343,41 @@ void FWakaTimeForUE4Module::TestAction() {
 					
 				]
 			+ SVerticalBox::Slot()
-				.HAlign(HAlign_Center)
-				.VAlign(VAlign_Center).Padding(baseMargin)
+			.HAlign(HAlign_Center)
+			.VAlign(VAlign_Center).Padding(baseMargin)
 				[
-					SNew(SVerticalBox)
-					+ SVerticalBox::Slot()
+					SNew(SHorizontalBox)
+					+ SHorizontalBox::Slot()
 					.HAlign(HAlign_Left)
 					.VAlign(VAlign_Top)
 					[
 						SNew(STextBlock)
 						.Text(FText::FromString(TEXT("I am working as a:")))
 					]
-					+ SVerticalBox::Slot()
+					+ SHorizontalBox::Slot()
 					.HAlign(HAlign_Right)
 					.VAlign(VAlign_Top)
 					[
 						SNew(STextBlock)
 						.Text(FText::FromString(FString(UTF8_TO_TCHAR(position.c_str()))))
 					]
-					+ SVerticalBox::Slot()
-						.HAlign(HAlign_Left)
-						.VAlign(VAlign_Bottom)
+				]
+			+ SVerticalBox::Slot()
+			.HAlign(HAlign_Center)
+			.VAlign(VAlign_Center).Padding(baseMargin)
+				[
+					SNew(SHorizontalBox)
+					+ SHorizontalBox::Slot()
+					.HAlign(HAlign_Left)
+					.VAlign(VAlign_Bottom)
 						[
 							SNew(SButton)
 							.Text(FText::FromString(TEXT("Developer")))
 							.OnClicked(this, &FWakaTimeForUE4Module::SetDeveloper)
-					]
-					+ SVerticalBox::Slot()
-						.HAlign(HAlign_Left)
-						.VAlign(VAlign_Bottom)
+						]
+					+ SHorizontalBox::Slot()
+					.HAlign(HAlign_Left)
+					.VAlign(VAlign_Bottom)
 						[
 							SNew(SButton)
 							.Text(FText::FromString(TEXT("Designer")))
