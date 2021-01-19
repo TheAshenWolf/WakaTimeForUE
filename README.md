@@ -9,12 +9,12 @@ You can get python here: https://www.python.org/downloads/
 1. Run the downloaded .exe file
 2. Tick "Add Python ... to PATH" at the bottom of the window.
 3. Click **Install Now**
-Done.
+4. Done.
 
-Check if everything works with commands
-**python --version**
-**pip -h**
-**wakatime -h**
+Check if everything works with commands  
+**python --version**  
+**pip -h**  
+**wakatime -h**  
 
 ### Installing the plugin to a Unreal Engine project
 1. Click green button labeled "Code"
