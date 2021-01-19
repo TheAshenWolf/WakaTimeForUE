@@ -17,10 +17,11 @@ public:
 	void OnDeleteActorsEnd();
 	void OnAddLevelToWorld(ULevel* Level);
 	void OnPostSaveWorld(uint32 SaveFlags, UWorld* World, bool bSucces);
-	void TestAction();
+	void OpenSettingsWindow();
 	void AddToolbarButton(FToolBarBuilder& Builder);
 	FReply SetDeveloper();
 	FReply SetDesigner();
+	FReply SaveData();
 
 	TSharedPtr<FUICommandList> PluginCommands;
 };

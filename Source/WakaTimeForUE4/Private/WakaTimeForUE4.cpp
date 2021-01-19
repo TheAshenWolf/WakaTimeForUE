@@ -15,6 +15,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <sstream>
+#include <fstream>
 #include <string>
 #include <chrono>
 #include <vector>
@@ -40,18 +41,28 @@ FDelegateHandle DuplicateActorsEndHandle;
 FDelegateHandle AddLevelToWorldHandle;
 FDelegateHandle PostSaveWorldHandle;
 
+// UI Elements
+TSharedRef<STextBlock> positionBlock = SNew(STextBlock)
+.Text(FText::FromString(FString(UTF8_TO_TCHAR(position.c_str())))).MinDesiredWidth(100).Justification(ETextJustify::Right);
+
+TSharedRef<SEditableTextBox> apiKeyBlock = SNew(SEditableTextBox)
+.Text(FText::FromString(FString(UTF8_TO_TCHAR(apiKey.c_str())))).MinDesiredWidth(500);
+
+TSharedRef<SWindow> SettingsWindow = SNew(SWindow);
+
+
 void WakaCommands::RegisterCommands()
 {
 	UI_COMMAND(TestCommand, "Waka Time", "Waka time settings", EUserInterfaceActionType::Button, FInputGesture());
 }
-
-
 
 FReply FWakaTimeForUE4Module::SetDeveloper()
 {
 	isDeveloper = true;
 	isDesigner = false;
 	devCategory = "coding";
+	position = "Developer";
+	positionBlock.Get().SetText(FText::FromString(FString(UTF8_TO_TCHAR(position.c_str()))));
 	return FReply::Handled();
 }
 
@@ -60,12 +71,34 @@ FReply FWakaTimeForUE4Module::SetDesigner()
 	isDeveloper = false;
 	isDesigner = true;
 	devCategory = "designing";
+	position = "Designer";
+	positionBlock.Get().SetText(FText::FromString(FString(UTF8_TO_TCHAR(position.c_str()))));
+	return FReply::Handled();
+}
+
+
+FReply FWakaTimeForUE4Module::SaveData() {
+	UE_LOG(LogTemp, Warning, TEXT("Saving settings"));
+	apiKey = TCHAR_TO_UTF8(*(apiKeyBlock.Get().GetText().ToString()));
+	std::ofstream saveFile;
+	saveFile.open("wakatimeSaveData.txt");
+	saveFile << position << '\n';
+	saveFile << apiKey;
+	saveFile.close();
+	SettingsWindow.Get().RequestDestroyWindow();
+	ifstream f("wakatimeSaveData.txt");
+	if (f.good()) {
+		UE_LOG(LogTemp, Warning, TEXT("File present"));
+	}
+	else {
+		UE_LOG(LogTemp, Warning, TEXT("File creation failed."));
+	}
 	return FReply::Handled();
 }
 
 string GetProjectName()
 {
-	FString projectPath = FPaths::GetProjectFilePath();
+	/*FString projectPath = FPaths::GetProjectFilePath();
 
 	std::string segment;
 	std::vector<std::string> seglist;
@@ -78,132 +111,13 @@ string GetProjectName()
 		token = path.substr(0, pos);
 		std::cout << token << std::endl;
 		path.erase(0, pos + delimiter.length());
-	
+
 		seglist.push_back(segment);
 	}
 
-	return seglist.back();
-}
+	return seglist.back();*/
 
-void CheckForPython()
-{
-	UE_LOG(LogTemp, Warning, TEXT("Checking Python installation..."));
-	char buffer[128];
-	string result = "";
-	string winPy = "not recognized";
-	string unixPy = "not found";
-	FILE *pipe;
-
-	pipe = _popen("python --version", "r");
-
-	while (!feof(pipe))
-	{
-
-		if (fgets(buffer, 128, pipe) != NULL)
-			result += buffer;
-	}
-
-	if (result.find(winPy) == std::string::npos && result.find(unixPy) == std::string::npos)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Python found."));
-	}
-	else
-	{
-
-#ifdef __unix__ // If Mac or Linux
-		UE_LOG(LogTemp, Error, TEXT("Python not found. Please, install it and restart the editor."));
-		FMessageDialog::Open(Ok, FText::FromString("Python not found. Please, install it and restart the editor."));
-		FGenericPlatformMisc::RequestExit(false);															 // Quits the editor
-		system("gnome-terminal -x sh -c 'echo sudo apt-get install python3; sudo apt-get install python3'"); // Starts terminal and runs a command prompting user for password
-#elif defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__) // If windows
-			UE_LOG(LogTemp, Error, TEXT("Python not found. Please, install it and restart the editor."));
-		_pclose(_popen("python", "r")); // Opens Microsoft Store
-		FMessageDialog::Open(Ok, FText::FromString("Python not found. Please, install it and restart the editor."));
-		FGenericPlatformMisc::RequestExit(false); // Quits the editor
-#else																										 // Else...
-		UE_LOG(LogTemp, Error, TEXT("Python not found. Please, install it and restart the editor."));
-		FMessageDialog::Open(Ok, FText::FromString("Python not found. Please, install it and restart the editor."));
-		FGenericPlatformMisc::RequestExit(false); // Quits the editor
-#endif
-	}
-
-	_pclose(pipe);
-}
-
-void CheckForPip()
-{
-	UE_LOG(LogTemp, Warning, TEXT("Checking Pip installation..."));
-	char buffer[128];
-	string result = "";
-	string winPip = "not recognized";
-	string unixPip = "not found";
-	FILE *pipe;
-
-	pipe = _popen("pip help", "r");
-
-	while (!feof(pipe))
-	{
-
-		if (fgets(buffer, 128, pipe) != NULL)
-			result += buffer;
-	}
-
-	if (result.find(winPip) == std::string::npos && result.find(unixPip) == std::string::npos)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Pip found."));
-	}
-	else
-	{
-#ifdef __unix__ // If Mac or Linux
-		UE_LOG(LogTemp, Warning, TEXT("Installing Pip..."));
-		system("gnome-terminal -x sh -c 'echo sudo apt-get install python3-pip; sudo apt-get install python3-pip'");
-#elif defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__) // If windows
-		UE_LOG(LogTemp, Warning, TEXT("Installing Pip..."));
-		_pclose(_popen("python ../../../Resources/get-pip.py", "r"));
-#else // Else...
-		UE_LOG(LogTemp, Warning, TEXT("Installing Pip..."));
-		_pclose(_popen("python ../../../Resources/get-pip.py", "r"));
-#endif
-	}
-
-	_pclose(pipe);
-}
-
-void CheckForWakaTimeCLI()
-{
-	UE_LOG(LogTemp, Warning, TEXT("Checking WakaTimeCLI installation..."));
-	char buffer[128];
-	string result = "";
-	FILE* pipe;
-
-	pipe = _popen("wakatime -h", "r");
-
-	while (!feof(pipe))
-	{
-
-		if (fgets(buffer, 128, pipe) != NULL)
-			result += buffer;
-	}
-
-	if (result.find("usage: wakatime") == std::string::npos)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("CLI found."));
-	}
-	else
-	{
-#ifdef __unix__ // If Mac or Linux
-		UE_LOG(LogTemp, Warning, TEXT("Installing WakaTimeCLI..."));
-		system("gnome-terminal -x sh -c 'echo sudo pip install wakatime; sudo pip install wakatime'");
-		system("gnome-terminal -x sh -c 'cd ../../../Resources/bash-wakatime");
-		system("gnome-terminal -x sh -c 'source ./bash-wakatime.sh'");
-#elif defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__) // If windows
-		UE_LOG(LogTemp, Warning, TEXT("Installing WakaTimeCLI..."));
-		_pclose(_popen("pip install wakatime", "r"));
-#else // Else...
-		UE_LOG(LogTemp, Warning, TEXT("Installing WakaTimeCLI..."));
-		_pclose(_popen("pip install wakatime", "r"));
-#endif
-	}
+	return "\"Unreal Engine 4\"";
 }
 
 void SendHeartbeat(bool fileSave, std::string filePath)
@@ -239,13 +153,43 @@ void SendHeartbeat(bool fileSave, FString filepath) {
 	SendHeartbeat(fileSave, path);
 }
 
-
 void FWakaTimeForUE4Module::StartupModule()
 {
-	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
-	CheckForPython();
-	CheckForPip();
-	CheckForWakaTimeCLI();
+	std::string line;
+	std::ifstream infile("wakatimeSaveData.txt");
+
+	if (std::getline(infile, line))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Got line."));
+		if (line == "Developer")
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Position: Developer"));
+			SetDeveloper();
+		}
+		else if (line == "Designer")
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Position: Designer"));
+			SetDesigner();
+		}
+
+		if (std::getline(infile, line)) {
+			UE_LOG(LogTemp, Warning, TEXT("Api key found."));
+			apiKey = line;
+			apiKeyBlock.Get().SetText(FText::FromString(FString(UTF8_TO_TCHAR(apiKey.c_str()))));
+
+			infile.close();
+		}
+		else
+		{
+			OpenSettingsWindow();
+		}
+	}
+	else
+	{
+		OpenSettingsWindow();
+	}
+
+
 
 	// Add Listeners
 	NewActorsDroppedHandle = FEditorDelegates::OnNewActorsDropped.AddRaw(this, &FWakaTimeForUE4Module::OnNewActorDropped);
@@ -259,7 +203,7 @@ void FWakaTimeForUE4Module::StartupModule()
 	PluginCommands = MakeShareable(new FUICommandList);
 	PluginCommands->MapAction(
 		WakaCommands::Get().TestCommand,
-		FExecuteAction::CreateRaw(this, &FWakaTimeForUE4Module::TestAction)
+		FExecuteAction::CreateRaw(this, &FWakaTimeForUE4Module::OpenSettingsWindow)
 	);
 
 	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
@@ -285,112 +229,118 @@ void FWakaTimeForUE4Module::ShutdownModule()
 
 void FWakaTimeForUE4Module::OnNewActorDropped(const TArray<UObject*>& Objects, const TArray<AActor*>& Actors) {
 	UE_LOG(LogTemp, Warning, TEXT("Actor Dropped."));
+	SendHeartbeat(false, GetProjectName());
 }
 
 void FWakaTimeForUE4Module::OnDuplicateActorsEnd() {
 	UE_LOG(LogTemp, Warning, TEXT("Actor duplicated."));
+	SendHeartbeat(false, GetProjectName());
 }
 
 void FWakaTimeForUE4Module::OnDeleteActorsEnd() {
 	UE_LOG(LogTemp, Warning, TEXT("Actor deleted."));
+	SendHeartbeat(false, GetProjectName());
 }
 
 void FWakaTimeForUE4Module::OnAddLevelToWorld(ULevel* Level) {
 	UE_LOG(LogTemp, Warning, TEXT("Added level to world."));
+	SendHeartbeat(false, GetProjectName());
 }
 
 void FWakaTimeForUE4Module::OnPostSaveWorld(uint32 SaveFlags, UWorld* World, bool bSucces)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Save world."));
-	/*FString fileName(World->GetFName().ToString());
-	SendHeartbeat(true, fileName);*/
+	SendHeartbeat(true, GetProjectName());
 }
 
-void FWakaTimeForUE4Module::TestAction() {
-	UE_LOG(LogTemp, Warning, TEXT("Waka Waka, Eh eh!"));
 
-	FMargin baseMargin;
-	baseMargin.Left = 100;
-	baseMargin.Right = 100;
+void FWakaTimeForUE4Module::OpenSettingsWindow() {
 
-	TSharedRef<SWindow> SettingsWindow = SNew(SWindow)
+	SettingsWindow = SNew(SWindow)
 		.Title(FText::FromString(TEXT("WakaTime Settings")))
 		.ClientSize(FVector2D(800, 400))
 		.SupportsMaximize(false)
-		.SupportsMinimize(false)
+		.SupportsMinimize(false).IsTopmostWindow(true)
 		[
 			SNew(SVerticalBox)
 			+ SVerticalBox::Slot()
-			.HAlign(HAlign_Center)
-			.VAlign(VAlign_Center).Padding(baseMargin)
-				[
-					SNew(SVerticalBox)
-					+ SVerticalBox::Slot()
-					.HAlign(HAlign_Left)
-					.VAlign(VAlign_Top)
-					[
-						SNew(STextBlock)
-						.Text(FText::FromString(TEXT("Your api key:")))
-					]
-					+ SVerticalBox::Slot()
-					.HAlign(HAlign_Center)
-					.VAlign(VAlign_Center)
-					[
-						SNew(SEditableTextBox)
-						.Text(FText::FromString(FString(UTF8_TO_TCHAR(apiKey.c_str()))))
-					]
-					
-					
-				]
+		.HAlign(HAlign_Center)
+		.VAlign(VAlign_Center)
+		[
+			SNew(SVerticalBox)
 			+ SVerticalBox::Slot()
+			.HAlign(HAlign_Left)
+			.VAlign(VAlign_Top)
+			[
+				SNew(STextBlock)
+				.Text(FText::FromString(TEXT("Your api key:"))).MinDesiredWidth(500)
+			]
+		+ SVerticalBox::Slot()
 			.HAlign(HAlign_Center)
-			.VAlign(VAlign_Center).Padding(baseMargin)
-				[
-					SNew(SHorizontalBox)
-					+ SHorizontalBox::Slot()
-					.HAlign(HAlign_Left)
-					.VAlign(VAlign_Top)
-					[
-						SNew(STextBlock)
-						.Text(FText::FromString(TEXT("I am working as a:")))
-					]
-					+ SHorizontalBox::Slot()
-					.HAlign(HAlign_Right)
-					.VAlign(VAlign_Top)
-					[
-						SNew(STextBlock)
-						.Text(FText::FromString(FString(UTF8_TO_TCHAR(position.c_str()))))
-					]
-				]
-			+ SVerticalBox::Slot()
-			.HAlign(HAlign_Center)
-			.VAlign(VAlign_Center).Padding(baseMargin)
-				[
-					SNew(SHorizontalBox)
-					+ SHorizontalBox::Slot()
-					.HAlign(HAlign_Left)
-					.VAlign(VAlign_Bottom)
-						[
-							SNew(SButton)
-							.Text(FText::FromString(TEXT("Developer")))
-							.OnClicked(this, &FWakaTimeForUE4Module::SetDeveloper)
-						]
-					+ SHorizontalBox::Slot()
-					.HAlign(HAlign_Left)
-					.VAlign(VAlign_Bottom)
-						[
-							SNew(SButton)
-							.Text(FText::FromString(TEXT("Designer")))
-							.OnClicked(this, &FWakaTimeForUE4Module::SetDesigner)
-						]
-				]
-			+ SVerticalBox::Slot()
-			.HAlign(HAlign_Center)
-			.VAlign(VAlign_Top).Padding(baseMargin)
-				[
-				SNew(SEditableTextBox)
-					.Text(FText::FromString(FString(UTF8_TO_TCHAR(apiKey.c_str()))))
-				]
+			.VAlign(VAlign_Center)
+			[
+				apiKeyBlock
+			]
+		]
+	+ SVerticalBox::Slot()
+		.HAlign(HAlign_Center)
+		.VAlign(VAlign_Center)
+		[
+			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot()
+		.HAlign(HAlign_Right)
+		.VAlign(VAlign_Top)
+		[
+			SNew(STextBlock).Justification(ETextJustify::Left)
+			.Text(FText::FromString(TEXT("I am working as a: "))).MinDesiredWidth(100)
+		]
+	+ SHorizontalBox::Slot()
+		.HAlign(HAlign_Left)
+		.VAlign(VAlign_Top)
+		[
+			positionBlock
+		]
+		]
+	+ SVerticalBox::Slot()
+		.HAlign(HAlign_Center)
+		.VAlign(VAlign_Center)
+		[
+			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot()
+		.HAlign(HAlign_Left)
+		.VAlign(VAlign_Bottom)
+		[
+			SNew(SBox).WidthOverride(100)
+			[
+				SNew(SButton)
+				.Text(FText::FromString(TEXT("Developer"))).ToolTipText(FText::FromString(TEXT("You activity will be marked as \"coding\"")))
+		.OnClicked(FOnClicked::CreateRaw(this, &FWakaTimeForUE4Module::SetDeveloper))
+			]
+		]
+	+ SHorizontalBox::Slot()
+		.HAlign(HAlign_Left)
+		.VAlign(VAlign_Bottom)
+		[
+			SNew(SBox).WidthOverride(100)
+			[
+				SNew(SButton)
+				.Text(FText::FromString(TEXT("Designer"))).ToolTipText(FText::FromString(TEXT("You activity will be marked as \"designing\"")))
+		.OnClicked(FOnClicked::CreateRaw(this, &FWakaTimeForUE4Module::SetDesigner))
+			]
+
+		]
+		]
+	+ SVerticalBox::Slot()
+		.HAlign(HAlign_Center)
+		.VAlign(VAlign_Bottom)
+		[
+			SNew(SBox).WidthOverride(100)
+			[
+				SNew(SButton)
+				.Text(FText::FromString(TEXT("Save")))
+		.OnClicked(FOnClicked::CreateRaw(this, &FWakaTimeForUE4Module::SaveData))
+			]
+		]
 		];
 	IMainFrameModule& MainFrameModule =
 		FModuleManager::LoadModuleChecked<IMainFrameModule>(TEXT
