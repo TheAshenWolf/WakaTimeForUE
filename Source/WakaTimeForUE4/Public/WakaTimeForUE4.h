@@ -19,9 +19,10 @@ public:
 	void OnPostSaveWorld(uint32 SaveFlags, UWorld* World, bool bSucces);
 	void TestAction();
 	void AddToolbarButton(FToolBarBuilder& Builder);
+	FReply SetDeveloper();
+	FReply SetDesigner();
 
 	TSharedPtr<FUICommandList> PluginCommands;
-	TSharedPtr<FUICommandInfo> WakaButton;
 };
 
 class WakaCommands : public TCommands<WakaCommands>

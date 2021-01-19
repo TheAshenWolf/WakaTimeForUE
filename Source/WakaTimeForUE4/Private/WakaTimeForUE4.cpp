@@ -3,6 +3,7 @@
 
 #include "Framework/Application/SlateApplication.h"
 #include "GenericPlatform/GenericPlatformMisc.h"
+#include "Framework/SlateDelegates.h"
 #include "Templates/SharedPointer.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/CoreDelegates.h"
@@ -28,6 +29,7 @@ using namespace EAppMsgType;
 
 bool isDeveloper(true);
 bool isDesigner(false);
+string position("Developer");
 string devCategory("coding");
 string apiKey("");
 
@@ -45,18 +47,20 @@ void WakaCommands::RegisterCommands()
 
 
 
-void SetDeveloper()
+FReply FWakaTimeForUE4Module::SetDeveloper()
 {
 	isDeveloper = true;
 	isDesigner = false;
 	devCategory = "coding";
+	return FReply::Handled();
 }
 
-void SetDesigner()
+FReply FWakaTimeForUE4Module::SetDesigner()
 {
 	isDeveloper = false;
 	isDesigner = true;
 	devCategory = "designing";
+	return FReply::Handled();
 }
 
 string GetProjectName()
@@ -318,23 +322,67 @@ void FWakaTimeForUE4Module::TestAction() {
 			SNew(SVerticalBox)
 			+ SVerticalBox::Slot()
 			.HAlign(HAlign_Center)
-			.VAlign(VAlign_Center)
+			.VAlign(VAlign_Center).Padding(baseMargin)
 				[
-					SNew(STextBlock)
-					.Text(FText::FromString(TEXT("Yeet")))
+					SNew(SVerticalBox)
+					+ SVerticalBox::Slot()
+					.HAlign(HAlign_Left)
+					.VAlign(VAlign_Top)
+					[
+						SNew(STextBlock)
+						.Text(FText::FromString(TEXT("Your api key:")))
+					]
+					+ SVerticalBox::Slot()
+					.HAlign(HAlign_Center)
+					.VAlign(VAlign_Center)
+					[
+						SNew(SEditableTextBox)
+						.Text(FText::FromString(FString(UTF8_TO_TCHAR(apiKey.c_str()))))
+					]
+					
+					
+				]
+			+ SVerticalBox::Slot()
+				.HAlign(HAlign_Center)
+				.VAlign(VAlign_Center).Padding(baseMargin)
+				[
+					SNew(SVerticalBox)
+					+ SVerticalBox::Slot()
+					.HAlign(HAlign_Left)
+					.VAlign(VAlign_Top)
+					[
+						SNew(STextBlock)
+						.Text(FText::FromString(TEXT("I am working as a:")))
+					]
+					+ SVerticalBox::Slot()
+					.HAlign(HAlign_Right)
+					.VAlign(VAlign_Top)
+					[
+						SNew(STextBlock)
+						.Text(FText::FromString(FString(UTF8_TO_TCHAR(position.c_str()))))
+					]
+					+ SVerticalBox::Slot()
+						.HAlign(HAlign_Left)
+						.VAlign(VAlign_Bottom)
+						[
+							SNew(SButton)
+							.Text(FText::FromString(TEXT("Developer")))
+							.OnClicked(this, &FWakaTimeForUE4Module::SetDeveloper)
+					]
+					+ SVerticalBox::Slot()
+						.HAlign(HAlign_Left)
+						.VAlign(VAlign_Bottom)
+						[
+							SNew(SButton)
+							.Text(FText::FromString(TEXT("Designer")))
+							.OnClicked(this, &FWakaTimeForUE4Module::SetDesigner)
+						]
 				]
 			+ SVerticalBox::Slot()
 			.HAlign(HAlign_Center)
-			.VAlign(VAlign_Top)
+			.VAlign(VAlign_Top).Padding(baseMargin)
 				[
-					SNew(STextBlock)
-					.Text(FText::FromString(TEXT("Your api key:")))
-				]
-			+ SVerticalBox::Slot()
-			.HAlign(HAlign_Center)
-			.VAlign(VAlign_Top)
-				[
-				SNew(SEditableTextBox).Padding(baseMargin)
+				SNew(SEditableTextBox)
 					.Text(FText::FromString(FString(UTF8_TO_TCHAR(apiKey.c_str()))))
 				]
 		];
@@ -357,7 +405,6 @@ void FWakaTimeForUE4Module::AddToolbarButton(FToolBarBuilder& Builder)
 {
 	Builder.AddToolBarButton(WakaCommands::Get().TestCommand);
 }
-
 
 #undef LOCTEXT_NAMESPACE
 
