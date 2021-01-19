@@ -160,7 +160,6 @@ void FWakaTimeForUE4Module::StartupModule()
 
 	if (std::getline(infile, line))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Got line."));
 		if (line == "Developer")
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Position: Developer"));
@@ -230,28 +229,23 @@ void FWakaTimeForUE4Module::ShutdownModule()
 }
 
 void FWakaTimeForUE4Module::OnNewActorDropped(const TArray<UObject*>& Objects, const TArray<AActor*>& Actors) {
-	UE_LOG(LogTemp, Warning, TEXT("Actor Dropped."));
 	SendHeartbeat(false, GetProjectName());
 }
 
 void FWakaTimeForUE4Module::OnDuplicateActorsEnd() {
-	UE_LOG(LogTemp, Warning, TEXT("Actor duplicated."));
 	SendHeartbeat(false, GetProjectName());
 }
 
 void FWakaTimeForUE4Module::OnDeleteActorsEnd() {
-	UE_LOG(LogTemp, Warning, TEXT("Actor deleted."));
 	SendHeartbeat(false, GetProjectName());
 }
 
 void FWakaTimeForUE4Module::OnAddLevelToWorld(ULevel* Level) {
-	UE_LOG(LogTemp, Warning, TEXT("Added level to world."));
 	SendHeartbeat(false, GetProjectName());
 }
 
 void FWakaTimeForUE4Module::OnPostSaveWorld(uint32 SaveFlags, UWorld* World, bool bSucces)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Save world."));
 	SendHeartbeat(true, GetProjectName());
 }
 
