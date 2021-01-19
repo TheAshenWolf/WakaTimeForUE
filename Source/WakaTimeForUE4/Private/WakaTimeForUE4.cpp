@@ -133,7 +133,6 @@ void SendHeartbeat(bool fileSave, std::string filePath)
 	}
 
 	command += "--project " + GetProjectName() + " ";
-	command += "--key aeba87d5-dfb5-4df1-9eea-653c87bb350f"; // TODO: REMOVE
 
 	//_pclose(_popen(command.c_str(), "r"));
 	system(command.c_str());
