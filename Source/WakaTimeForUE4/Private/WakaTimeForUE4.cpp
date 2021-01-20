@@ -6,6 +6,7 @@
 #include "Widgets/Input/SEditableTextBox.h"
 #include "Framework/SlateDelegates.h"
 #include "Templates/SharedPointer.h"
+#include "GeneralProjectSettings.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/CoreDelegates.h"
 #include "LevelEditor.h"
@@ -95,6 +96,11 @@ FReply FWakaTimeForUE4Module::SaveData() {
 
 string GetProjectName()
 {
+	const UGeneralProjectSettings& ProjectSettings = *GetDefault<UGeneralProjectSettings>();
+	if (ProjectSettings.ProjectName != "") {
+		return TCHAR_TO_UTF8(*(ProjectSettings.ProjectName));
+	}
+
 	return "\"Unreal Engine 4\"";
 }
 
