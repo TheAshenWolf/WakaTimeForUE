@@ -3,6 +3,7 @@
 
 #include "Framework/Application/SlateApplication.h"
 #include "GenericPlatform/GenericPlatformMisc.h"
+#include "Widgets/Input/SEditableTextBox.h"
 #include "Framework/SlateDelegates.h"
 #include "Templates/SharedPointer.h"
 #include "Misc/MessageDialog.h"
@@ -127,7 +128,7 @@ void SendHeartbeat(bool fileSave, std::string filePath)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Sending Heartbeat"));
 
-	string command("wakatime --file " + filePath + " ");
+	string command("wakatime --entity " + filePath + " ");
 	if (apiKey != "") {
 		command += "--key " + apiKey + " ";
 	}
@@ -136,12 +137,12 @@ void SendHeartbeat(bool fileSave, std::string filePath)
 	}
 
 	command += "--project " + GetProjectName() + " ";
-	command += "--type \"app\" ";
-	command += "--plugin \"unreal-wakatime/1.0.0\"";
-
-	//command += "--category " + (isDebugging ? "debugging" : devCategory); not in cli atm
+	command += "--entity-type \"app\" ";
+	command += "--plugin \"unreal-wakatime/1.0.0\" ";
+	command += "--category " + (isDebugging ? "debugging" : devCategory) + " ";
 
 	//_pclose(_popen(command.c_str(), "r"));
+	UE_LOG(LogTemp, Log, TEXT("cmd: %s"), *FString(command.c_str()));
 	system(command.c_str());
 }
 
@@ -191,8 +192,8 @@ void FWakaTimeForUE4Module::StartupModule()
 	DuplicateActorsEndHandle = FEditorDelegates::OnDuplicateActorsEnd.AddRaw(this, &FWakaTimeForUE4Module::OnDuplicateActorsEnd);
 	AddLevelToWorldHandle = FEditorDelegates::OnAddLevelToWorld.AddRaw(this, &FWakaTimeForUE4Module::OnAddLevelToWorld);
 	PostSaveWorldHandle = FEditorDelegates::PostSaveWorld.AddRaw(this, &FWakaTimeForUE4Module::OnPostSaveWorld);
-	PostPIEStartedHandle = FEditorDelegates::PostPIEStarted.AddRaw(this & FWakaTimeForUE4Module::OnPostPIEStarted);
-	PrePIEEndedHandle = FEditorDelegates::PrePIEEnded.AddRaw(this & FWakaTimeForUE4Module::OnPrePIEEnded);
+	PostPIEStartedHandle = FEditorDelegates::PostPIEStarted.AddRaw(this, &FWakaTimeForUE4Module::OnPostPIEStarted);
+	PrePIEEndedHandle = FEditorDelegates::PrePIEEnded.AddRaw(this, &FWakaTimeForUE4Module::OnPrePIEEnded);
 
 	WakaCommands::Register();
 
@@ -223,6 +224,8 @@ void FWakaTimeForUE4Module::ShutdownModule()
 	FEditorDelegates::OnDuplicateActorsEnd.Remove(DuplicateActorsEndHandle);
 	FEditorDelegates::OnAddLevelToWorld.Remove(AddLevelToWorldHandle);
 	FEditorDelegates::PostSaveWorld.Remove(PostSaveWorldHandle);
+	FEditorDelegates::PostPIEStarted.Remove(PostPIEStartedHandle);
+	FEditorDelegates::PrePIEEnded.Remove(PrePIEEndedHandle);
 	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
 	// we call this function before unloading the module.
 }
