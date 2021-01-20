@@ -9,9 +9,10 @@ You can get python here: https://www.python.org/downloads/
 1. Run the downloaded .exe file
 2. Tick "Add Python ... to PATH" at the bottom of the window.
 3. Click **Install Now**
-4. Open cmd/terminal
-5. Use command **pip install wakatime**
-6. Done.
+4 Optional: Click "Disable PATH length limit"
+5. Open cmd/terminal
+6. Use command **pip install wakatime**
+7. Done.
 
 Check if everything works with commands  
 **python --version**  
