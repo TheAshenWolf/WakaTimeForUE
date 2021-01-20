@@ -4,6 +4,7 @@
 #include "Framework/Application/SlateApplication.h"
 #include "GenericPlatform/GenericPlatformMisc.h"
 #include "Widgets/Input/SEditableTextBox.h"
+#include "Engine/World.h"
 #include "Framework/SlateDelegates.h"
 #include "Templates/SharedPointer.h"
 #include "GeneralProjectSettings.h"
@@ -13,8 +14,8 @@
 #include "Misc/Paths.h"
 #include "Misc/App.h"
 #include "Editor.h"
-
-
+#include "Misc/OutputDevice.h"
+#include <Windows.h>
 #include <stdexcept>
 #include <iostream>
 #include <stdio.h>
@@ -25,7 +26,8 @@
 #include <vector>
 #include <array>
 #include <Editor/MainFrame/Public/Interfaces/IMainFrameModule.h>
-
+#include "GenericPlatform/GenericPlatformMisc.h"
+#include "GenericPlatform/GenericPlatformProcess.h"
 
 using namespace std;
 using namespace EAppMsgType;
@@ -98,15 +100,20 @@ FReply FWakaTimeForUE4Module::SaveData() {
 
 string GetProjectName()
 {
+
+	/*const TCHAR* projectName = FApp::GetProjectName();
+	std::string mainModuleName = TCHAR_TO_UTF8(projectName);
 	const UGeneralProjectSettings& ProjectSettings = *GetDefault<UGeneralProjectSettings>();
 	if (ProjectSettings.ProjectName != "") {
 		return TCHAR_TO_UTF8(*(ProjectSettings.ProjectName));
 	}
-	else if (FApp::GetProjectName() != TEXT("")) {
-		return TCHAR_TO_UTF8(*(FApp::GetProjectName()));
+	else if (mainModuleName != "") {
+		return TCHAR_TO_UTF8(projectName);
 	}
 
-	return "\"Unreal Engine 4\"";
+	return "Unreal Engine 4";*/
+
+	return "TestBeat";
 }
 
 void SendHeartbeat(bool fileSave, std::string filePath)
@@ -121,15 +128,21 @@ void SendHeartbeat(bool fileSave, std::string filePath)
 		command += "--write ";
 	}
 
-	command += "--project " + GetProjectName() + " ";
+	command += "--project \"" + GetProjectName() + "\" ";
 	command += "--entity-type \"app\" ";
 	command += "--language \"Unreal Engine\" ";
 	command += "--plugin \"unreal-wakatime/1.0.0\" ";
 	command += "--category " + (isDebugging ? "debugging" : devCategory) + " ";
 
 	// UE_LOG(LogTemp, Log, TEXT("WakaTime cmd: %s"), *FString(command.c_str()));
-	system(command.c_str()); // TODO: Rework for windows
+	//system(command.c_str());
+	
+	bool success = GEngine->Exec(GEditor->GetEditorWorldContext().World(), (TEXT(" %s"), *FString(command.c_str())), *GLog);
+	//bool success = FPlatformMisc::Exec(GEditor->GetEditorWorldContext().World(), (TEXT(" %s"), *FString(command.c_str())), *GLog);
+	if (success){UE_LOG(LogTemp, Warning, TEXT("yes")); }
+	else { UE_LOG(LogTemp, Warning, TEXT("no")); }
 }
+	
 
 void SendHeartbeat(bool fileSave, FString filepath) {
 	std::string path(TCHAR_TO_UTF8(*filepath));
@@ -203,7 +216,6 @@ void FWakaTimeForUE4Module::StartupModule()
 
 void FWakaTimeForUE4Module::ShutdownModule()
 {
-
 	FEditorDelegates::OnNewActorsDropped.Remove(NewActorsDroppedHandle);
 	FEditorDelegates::OnDeleteActorsEnd.Remove(DeleteActorsEndHandle);
 	FEditorDelegates::OnDuplicateActorsEnd.Remove(DuplicateActorsEndHandle);
