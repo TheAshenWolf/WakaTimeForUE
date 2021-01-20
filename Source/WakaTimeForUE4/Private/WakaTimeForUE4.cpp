@@ -138,7 +138,7 @@ void FWakaTimeForUE4Module::StartupModule()
 		}
 		else if (line == "Designer")
 		{
-			; (LogTemp, Warning, TEXT("WakaTime: Position set to Designer"));
+			UE_LOG(LogTemp, Warning, TEXT("WakaTime: Position set to Designer"));
 			SetDesigner();
 		}
 
