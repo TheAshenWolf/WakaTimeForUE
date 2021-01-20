@@ -11,7 +11,9 @@
 #include "Misc/CoreDelegates.h"
 #include "LevelEditor.h"
 #include "Misc/Paths.h"
+#include "Misc/App.h"
 #include "Editor.h"
+
 
 #include <stdexcept>
 #include <iostream>
@@ -99,6 +101,9 @@ string GetProjectName()
 	const UGeneralProjectSettings& ProjectSettings = *GetDefault<UGeneralProjectSettings>();
 	if (ProjectSettings.ProjectName != "") {
 		return TCHAR_TO_UTF8(*(ProjectSettings.ProjectName));
+	}
+	else if (FApp::GetProjectName() != TEXT("")) {
+		return TCHAR_TO_UTF8(*(FApp::GetProjectName()));
 	}
 
 	return "\"Unreal Engine 4\"";
