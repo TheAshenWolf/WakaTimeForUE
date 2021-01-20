@@ -30,6 +30,7 @@ using namespace EAppMsgType;
 
 bool isDeveloper(true);
 bool isDesigner(false);
+bool isDebugging(false);
 string position("Developer");
 string devCategory("coding");
 string apiKey("");
@@ -40,6 +41,8 @@ FDelegateHandle DeleteActorsEndHandle;
 FDelegateHandle DuplicateActorsEndHandle;
 FDelegateHandle AddLevelToWorldHandle;
 FDelegateHandle PostSaveWorldHandle;
+FDelegateHandle PostPIEStartedHandle;
+FDelegateHandle PrePIEEndedHandle;
 
 // UI Elements
 TSharedRef<STextBlock> positionBlock = SNew(STextBlock)
@@ -133,6 +136,10 @@ void SendHeartbeat(bool fileSave, std::string filePath)
 	}
 
 	command += "--project " + GetProjectName() + " ";
+	command += "--type \"app\" ";
+	command += "--plugin \"unreal-wakatime/1.0.0\"";
+
+	//command += "--category " + (isDebugging ? "debugging" : devCategory); not in cli atm
 
 	//_pclose(_popen(command.c_str(), "r"));
 	system(command.c_str());
@@ -184,6 +191,8 @@ void FWakaTimeForUE4Module::StartupModule()
 	DuplicateActorsEndHandle = FEditorDelegates::OnDuplicateActorsEnd.AddRaw(this, &FWakaTimeForUE4Module::OnDuplicateActorsEnd);
 	AddLevelToWorldHandle = FEditorDelegates::OnAddLevelToWorld.AddRaw(this, &FWakaTimeForUE4Module::OnAddLevelToWorld);
 	PostSaveWorldHandle = FEditorDelegates::PostSaveWorld.AddRaw(this, &FWakaTimeForUE4Module::OnPostSaveWorld);
+	PostPIEStartedHandle = FEditorDelegates::PostPIEStarted.AddRaw(this & FWakaTimeForUE4Module::OnPostPIEStarted);
+	PrePIEEndedHandle = FEditorDelegates::PrePIEEnded.AddRaw(this & FWakaTimeForUE4Module::OnPrePIEEnded);
 
 	WakaCommands::Register();
 
@@ -236,6 +245,18 @@ void FWakaTimeForUE4Module::OnAddLevelToWorld(ULevel* Level) {
 
 void FWakaTimeForUE4Module::OnPostSaveWorld(uint32 SaveFlags, UWorld* World, bool bSucces)
 {
+	SendHeartbeat(true, GetProjectName());
+}
+
+void FWakaTimeForUE4Module::OnPostPIEStarted(bool bIsSimulating)
+{
+	isDebugging = true;
+	SendHeartbeat(true, GetProjectName());
+}
+
+void FWakaTimeForUE4Module::OnPrePIEEnded(bool bIsSimulating)
+{
+	isDebugging = false;
 	SendHeartbeat(true, GetProjectName());
 }
 

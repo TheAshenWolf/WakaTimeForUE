@@ -17,6 +17,8 @@ public:
 	void OnDeleteActorsEnd();
 	void OnAddLevelToWorld(ULevel* Level);
 	void OnPostSaveWorld(uint32 SaveFlags, UWorld* World, bool bSucces);
+	void OnPostPIEStarted(bool bIsSimulating);
+	void OnPrePIEEnded(bool bIsSimulating);
 	void OpenSettingsWindow();
 	void AddToolbarButton(FToolBarBuilder& Builder);
 	FReply SetDeveloper();
