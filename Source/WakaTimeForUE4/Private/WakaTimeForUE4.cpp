@@ -82,7 +82,7 @@ FReply FWakaTimeForUE4Module::SetDesigner()
 
 
 FReply FWakaTimeForUE4Module::SaveData() {
-	UE_LOG(LogTemp, Warning, TEXT("Saving settings"));
+	UE_LOG(LogTemp, Warning, TEXT("WakaTime: Saving settings"));
 	apiKey = TCHAR_TO_UTF8(*(apiKeyBlock.Get().GetText().ToString()));
 	std::ofstream saveFile;
 	saveFile.open("wakatimeSaveData.txt");
@@ -90,43 +90,17 @@ FReply FWakaTimeForUE4Module::SaveData() {
 	saveFile << apiKey;
 	saveFile.close();
 	SettingsWindow.Get().RequestDestroyWindow();
-	ifstream f("wakatimeSaveData.txt");
-	if (f.good()) {
-		UE_LOG(LogTemp, Warning, TEXT("File present"));
-	}
-	else {
-		UE_LOG(LogTemp, Warning, TEXT("File creation failed."));
-	}
 	return FReply::Handled();
 }
 
 string GetProjectName()
 {
-	/*FString projectPath = FPaths::GetProjectFilePath();
-
-	std::string segment;
-	std::vector<std::string> seglist;
-	size_t pos = 0;
-	std::string token;
-	std::string delimiter("\\");
-	std::string path = std::string(TCHAR_TO_UTF8(*projectPath));
-
-	while ((pos = path.find(delimiter)) != std::string::npos) {
-		token = path.substr(0, pos);
-		std::cout << token << std::endl;
-		path.erase(0, pos + delimiter.length());
-
-		seglist.push_back(segment);
-	}
-
-	return seglist.back();*/
-
 	return "\"Unreal Engine 4\"";
 }
 
 void SendHeartbeat(bool fileSave, std::string filePath)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Sending Heartbeat"));
+	UE_LOG(LogTemp, Warning, TEXT("WakaTime: Sending Heartbeat"));
 
 	string command("wakatime --entity " + filePath + " ");
 	if (apiKey != "") {
@@ -141,9 +115,8 @@ void SendHeartbeat(bool fileSave, std::string filePath)
 	command += "--plugin \"unreal-wakatime/1.0.0\" ";
 	command += "--category " + (isDebugging ? "debugging" : devCategory) + " ";
 
-	//_pclose(_popen(command.c_str(), "r"));
-	UE_LOG(LogTemp, Log, TEXT("cmd: %s"), *FString(command.c_str()));
-	system(command.c_str());
+	// UE_LOG(LogTemp, Log, TEXT("WakaTime cmd: %s"), *FString(command.c_str()));
+	system(command.c_str()); // TODO: Rework for windows
 }
 
 void SendHeartbeat(bool fileSave, FString filepath) {
@@ -160,17 +133,17 @@ void FWakaTimeForUE4Module::StartupModule()
 	{
 		if (line == "Developer")
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Position: Developer"));
+			UE_LOG(LogTemp, Warning, TEXT("WakaTime: Position set to Developer"));
 			SetDeveloper();
 		}
 		else if (line == "Designer")
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Position: Designer"));
+			; (LogTemp, Warning, TEXT("WakaTime: Position set to Designer"));
 			SetDesigner();
 		}
 
 		if (std::getline(infile, line)) {
-			UE_LOG(LogTemp, Warning, TEXT("Api key found."));
+			UE_LOG(LogTemp, Warning, TEXT("WakaTime: Api key found."));
 			apiKey = line;
 			apiKeyBlock.Get().SetText(FText::FromString(FString(UTF8_TO_TCHAR(apiKey.c_str()))));
 
