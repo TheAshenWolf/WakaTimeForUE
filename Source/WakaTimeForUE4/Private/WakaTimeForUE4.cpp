@@ -28,6 +28,7 @@
 #include <Editor/MainFrame/Public/Interfaces/IMainFrameModule.h>
 #include "GenericPlatform/GenericPlatformMisc.h"
 #include "GenericPlatform/GenericPlatformProcess.h"
+#include <Runtime/Online/HTTP/Public/HttpModule.h>
 
 using namespace std;
 using namespace EAppMsgType;
@@ -117,7 +118,7 @@ void SendHeartbeat(bool fileSave, std::string filePath)
 {
 	UE_LOG(LogTemp, Warning, TEXT("WakaTime: Sending Heartbeat"));
 
-	string command("wakatime --entity " + filePath + " ");
+	string command("wakatime --entity \"" + filePath + "\" ");
 	if (apiKey != "") {
 		command += "--key " + apiKey + " ";
 	}
@@ -129,14 +130,16 @@ void SendHeartbeat(bool fileSave, std::string filePath)
 	command += "--entity-type \"app\" ";
 	command += "--language \"Unreal Engine\" ";
 	command += "--plugin \"unreal-wakatime/1.0.0\" ";
-	command += "--category " + (isDebugging ? "debugging" : devCategory) + " ; exit";
+	command += "--category " + (isDebugging ? "debugging" : devCategory) + " ";
 
-	// UE_LOG(LogTemp, Log, TEXT("WakaTime cmd: %s"), *FString(command.c_str()));
+	UE_LOG(LogTemp, Log, TEXT("WakaTime cmd: %s"), *FString(command.c_str()));
 	//system(command.c_str());
 	
 	//bool success = GEngine->Exec(GWorld, (TEXT(" %s"), *FString(command.c_str())), *GLog);
+	//bool success = GEngine->Exec(GWorld, (*FString::Printf(TEXT("%s"), *command.c_str())), *GLog);
 	//bool success = FPlatformMisc::Exec(GEditor->GetEditorWorldContext().World(), (TEXT(" %s"), *FString(command.c_str())), *GLog);
-
+	
+	/*
 	FString OutStdOut;
 	FString OutStdErr;
 	int32 OutReturnCode;
@@ -145,12 +148,46 @@ void SendHeartbeat(bool fileSave, std::string filePath)
 	const FString Params = (TEXT(" %s"), *FString(command.c_str()));
 
 	bool success = FPlatformProcess::ExecProcess(*Command, *Params, &OutReturnCode, &OutStdOut, &OutStdErr);
+	*/
 
-	if (success){UE_LOG(LogTemp, Warning, TEXT("yes")); }
-	else { UE_LOG(LogTemp, Warning, TEXT("no")); }
+
+	STARTUPINFO si;
+	PROCESS_INFORMATION pi;
+
+	ZeroMemory(&si, sizeof(si));
+	si.cb = sizeof(si);
+	ZeroMemory(&pi, sizeof(pi));
+
+	LPCWSTR exe = TEXT("C:\\Windows\\System32\\cmd.exe");
+	LPWSTR cmd = UTF8_TO_TCHAR(command.c_str());
+	// Start the child process. 
+	bool success = CreateProcess(exe,   // No module name (use command line)
+		cmd,        // Command line
+		NULL,           // Process handle not inheritable
+		NULL,           // Thread handle not inheritable
+		FALSE,          // Set handle inheritance to FALSE
+		DETACHED_PROCESS,              // No creation flags
+		NULL,           // Use parent's environment block
+		NULL,           // Use parent's starting directory 
+		&si,            // Pointer to STARTUPINFO structure
+		&pi);         // Pointer to PROCESS_INFORMATION structure
+
+	// Wait until child process exits.
+	WaitForSingleObject(pi.hProcess, INFINITE);
+
+	// Close process and thread handles. 
+	CloseHandle(pi.hProcess);
+	CloseHandle(pi.hThread);
+
+	if (success) {
+		UE_LOG(LogTemp, Warning, TEXT("Heartbeat successfully sent.")); 
+	}
+	else { 
+		UE_LOG(LogTemp, Warning, TEXT("Heartbeat couldn't be sent.")); 
+		UE_LOG(LogTemp, Warning, TEXT("%d"), GetLastError());
+	}
 }
 	
-
 void SendHeartbeat(bool fileSave, FString filepath) {
 	std::string path(TCHAR_TO_UTF8(*filepath));
 	SendHeartbeat(fileSave, path);
