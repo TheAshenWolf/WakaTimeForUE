@@ -121,8 +121,6 @@ void SendHeartbeat(bool fileSave, std::string filePath)
 	command += "--plugin \"unreal-wakatime/1.0.0\" ";
 	command += "--category " + (isDebugging ? "debugging" : devCategory) + " ";
 
-	command = " /C start /B curl -d '{\"key1\":\"value1\", \"key2\":\"value2\"}' -H \"Content-Type: application/json\" -X POST https://theashenwolf.free.beeceptor.com";
-
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
 
