@@ -100,8 +100,7 @@ FReply FWakaTimeForUE4Module::SaveData() {
 
 string GetProjectName()
 {
-
-	/*const TCHAR* projectName = FApp::GetProjectName();
+	const TCHAR* projectName = FApp::GetProjectName();
 	std::string mainModuleName = TCHAR_TO_UTF8(projectName);
 	const UGeneralProjectSettings& ProjectSettings = *GetDefault<UGeneralProjectSettings>();
 	if (ProjectSettings.ProjectName != "") {
@@ -111,9 +110,7 @@ string GetProjectName()
 		return TCHAR_TO_UTF8(projectName);
 	}
 
-	return "Unreal Engine 4";*/
-
-	return "TestBeat";
+	return "Unreal Engine 4";
 }
 
 void SendHeartbeat(bool fileSave, std::string filePath)
@@ -132,15 +129,25 @@ void SendHeartbeat(bool fileSave, std::string filePath)
 	command += "--entity-type \"app\" ";
 	command += "--language \"Unreal Engine\" ";
 	command += "--plugin \"unreal-wakatime/1.0.0\" ";
-	command += "--category " + (isDebugging ? "debugging" : devCategory) + " ";
+	command += "--category " + (isDebugging ? "debugging" : devCategory) + " ; exit";
 
 	// UE_LOG(LogTemp, Log, TEXT("WakaTime cmd: %s"), *FString(command.c_str()));
-	//system(command.c_str());
+	system(command.c_str());
 	
-	bool success = GEngine->Exec(GEditor->GetEditorWorldContext().World(), (TEXT(" %s"), *FString(command.c_str())), *GLog);
+	//bool success = GEngine->Exec(GWorld, (TEXT(" %s"), *FString(command.c_str())), *GLog);
 	//bool success = FPlatformMisc::Exec(GEditor->GetEditorWorldContext().World(), (TEXT(" %s"), *FString(command.c_str())), *GLog);
+
+	/*FString OutStdOut;
+	FString OutStdErr;
+	int32 OutReturnCode;
+
+	const FString Command = TEXT("wakatime");
+	const FString Params = (TEXT(" %s"), *FString(command.c_str()));
+
+	bool success = FPlatformProcess::ExecProcess(*Command, *Params, &OutReturnCode, &OutStdOut, &OutStdErr);
+
 	if (success){UE_LOG(LogTemp, Warning, TEXT("yes")); }
-	else { UE_LOG(LogTemp, Warning, TEXT("no")); }
+	else { UE_LOG(LogTemp, Warning, TEXT("no")); }*/
 }
 	
 
