@@ -400,7 +400,13 @@ void FWakaTimeForUE4Module::OpenSettingsWindow()
 
 void FWakaTimeForUE4Module::AddToolbarButton(FToolBarBuilder& Builder)
 {
-	Builder.AddToolBarButton(WakaCommands::Get().TestCommand);
+	FSlateIcon icon = FSlateIcon(FEditorStyle::GetStyleSetName(),
+			"LevelEditor.ViewOptions",
+			"LevelEditor.ViewOptions.Small");
+
+	Builder.AddToolBarButton(WakaCommands::Get().TestCommand, NAME_None, FText::FromString("Wakatime Settings"),
+		FText::FromString("Click me to display a message"),
+		icon, NAME_None);
 	//Style->Set("Niagara.CompileStatus.Warning", new IMAGE_BRUSH("Icons/CompileStatus_Warning", Icon40x40));
 }
 
