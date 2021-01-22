@@ -111,7 +111,7 @@ void SendHeartbeat(bool fileSave, std::string filePath)
 {
 	UE_LOG(LogTemp, Warning, TEXT("WakaTime: Sending Heartbeat"));
 
-	string command(" /C start /B wakatime --entity \" " + filePath + " \" ");
+	string command(" /C start /B wakatime --entity \"" + filePath + "\" ");
 	if (apiKey != "")
 	{
 		command += "--key " + apiKey + " ";
@@ -139,10 +139,6 @@ void SendHeartbeat(bool fileSave, std::string filePath)
 	wchar_t wtext[256];
 	mbstowcs(wtext, command.c_str(), strlen(command.c_str()) + 1);//Plus null
 	LPWSTR cmd = wtext;
-
-	UE_LOG(LogTemp, Log, TEXT("WakaTime cmd: %s"), cmd);
-	UE_LOG(LogTemp, Log, TEXT("WakaTime cmd: %s"), UTF8_TO_TCHAR(command.c_str()));
-
 
 	bool success = CreateProcess(exe, // use cmd
 	                             cmd, // the command
@@ -273,7 +269,6 @@ TSharedRef<FSlateStyleSet> FWakaTimeForUE4Module::Create()
 	TSharedRef<FSlateStyleSet> Style = MakeShareable(new FSlateStyleSet("WakaTime2DStyle"));
 	FString projectDirectory(FPaths::ProjectPluginsDir() / "WakaTimeForUE4" / "Resources");
 	Style->SetContentRoot(projectDirectory);
-	UE_LOG(LogTemp, Warning, TEXT("FilePaths: ProjectDirectory: %s"), *projectDirectory);
 	Style->Set("mainIcon", new FSlateImageBrush(projectDirectory + "/Icon128.png", FVector2D(40, 40), FSlateColor()));
 	return Style;
 }
