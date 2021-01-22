@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
+#include <Runtime/SlateCore/Public/Styling/SlateStyle.h>
 
 class FWakaTimeForUE4Module : public IModuleInterface
 {
@@ -13,6 +14,7 @@ public:
 	/** IModuleInterface implementation */
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
+	TSharedRef<FSlateStyleSet> Create();
 	void OnNewActorDropped(const TArray<UObject*>& Objects, const TArray<AActor*>& Actors);
 	void OnDuplicateActorsEnd();
 	void OnDeleteActorsEnd();
@@ -36,8 +38,8 @@ public:
 	WakaCommands()
 		: TCommands<WakaCommands>
 		(
-			TEXT("TutorialPluginEditor"),
-			NSLOCTEXT("Contexts", "TutorialPluginEditor", "TutorialPluginEditor Plugin"),
+			TEXT("WakatimeEditor"),
+			NSLOCTEXT("Wakatime", "WakatimeEditor", "Wakatime Plugin"),
 			NAME_None,
 			FEditorStyle::GetStyleSetName()
 			) {}

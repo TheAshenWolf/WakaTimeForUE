@@ -14,6 +14,8 @@
 #include <Editor/MainFrame/Public/Interfaces/IMainFrameModule.h>
 #include <Runtime/SlateCore/Public/Styling/SlateStyle.h>
 #include <Runtime/Projects/Public/Interfaces/IPluginManager.h>
+#include <Runtime/Engine/Public/Slate/SlateGameResources.h>
+#include "Styling/SlateStyleRegistry.h"
 
 using namespace std;
 using namespace EAppMsgType;
@@ -45,6 +47,8 @@ TSharedRef<SEditableTextBox> apiKeyBlock = SNew(SEditableTextBox)
 .Text(FText::FromString(FString(UTF8_TO_TCHAR(apiKey.c_str())))).MinDesiredWidth(500);
 
 TSharedRef<SWindow> SettingsWindow = SNew(SWindow);
+
+TSharedPtr<FSlateStyleSet> StyleSetInstance = NULL;
 
 
 void WakaCommands::RegisterCommands()
@@ -161,7 +165,6 @@ void SendHeartbeat(bool fileSave, std::string filePath)
 	if (success)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Heartbeat successfully sent."));
-		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Error code = %d"), GetLastError());
 	}
 	else
 	{
@@ -178,6 +181,14 @@ void SendHeartbeat(bool fileSave, FString filepath)
 
 void FWakaTimeForUE4Module::StartupModule()
 {
+	if (!StyleSetInstance.IsValid())
+	{
+		StyleSetInstance = FWakaTimeForUE4Module::Create();
+		FSlateStyleRegistry::RegisterSlateStyle(*StyleSetInstance);
+	}
+
+
+
 	std::string line;
 	std::ifstream infile("wakatimeSaveData.txt");
 
@@ -255,6 +266,16 @@ void FWakaTimeForUE4Module::ShutdownModule()
 	FEditorDelegates::PostSaveWorld.Remove(PostSaveWorldHandle);
 	FEditorDelegates::PostPIEStarted.Remove(PostPIEStartedHandle);
 	FEditorDelegates::PrePIEEnded.Remove(PrePIEEndedHandle);
+}
+
+TSharedRef<FSlateStyleSet> FWakaTimeForUE4Module::Create()
+{
+	TSharedRef<FSlateStyleSet> Style = MakeShareable(new FSlateStyleSet("WakaTime2DStyle"));
+	FString projectDirectory(FPaths::ProjectPluginsDir() / "WakaTimeForUE4" / "Resources");
+	Style->SetContentRoot(projectDirectory);
+	UE_LOG(LogTemp, Warning, TEXT("FilePaths: ProjectDirectory: %s"), *projectDirectory);
+	Style->Set("mainIcon", new FSlateImageBrush(projectDirectory + "/Icon128.png", FVector2D(40, 40), FSlateColor()));
+	return Style;
 }
 
 void FWakaTimeForUE4Module::OnNewActorDropped(const TArray<UObject*>& Objects, const TArray<AActor*>& Actors)
@@ -402,14 +423,10 @@ void FWakaTimeForUE4Module::OpenSettingsWindow()
 
 void FWakaTimeForUE4Module::AddToolbarButton(FToolBarBuilder& Builder)
 {
-	TSharedRef<FSlateStyleSet> Style = MakeShareable(new FSlateStyleSet("WakaTime2DStyle"));
-	Style->SetContentRoot(IPluginManager::Get().FindPlugin("WakaTimeForUE4")->GetBaseDir() / TEXT("Resources"));
-	Style->Set("mainIcon", new FSlateImageBrush(TEXT("Icon128.png"), FVector2D(128,128), FSlateColor()));
+	FSlateIcon icon = FSlateIcon(TEXT("WakaTime2DStyle"), "mainIcon");//Style.Get().GetStyleSetName(), "Icon128.png");
 
-	FSlateIcon icon = FSlateIcon(Style.Get().GetStyleSetName(), "mainIcon");
-
-	Builder.AddToolBarButton(WakaCommands::Get().TestCommand, NAME_None, FText::FromString("Wakatime Settings"),
-		FText::FromString("Click me to display a message"),
+	Builder.AddToolBarButton(WakaCommands::Get().TestCommand, NAME_None, FText::FromString("WakaTime"),
+		FText::FromString("WakaTime plugin settings"),
 		icon, NAME_None);
 	//Style->Set("Niagara.CompileStatus.Warning", new IMAGE_BRUSH("Icons/CompileStatus_Warning", Icon40x40));
 }
