@@ -1,5 +1,8 @@
 # WakaTimeForUE4
 
+![alt text](https://img.shields.io/badge/version-1.0.0-blue) 
+---
+
 Make sure you have Python, pip and wakatime installed and **available from cmd/terminal**.
 That means both installing it and adding it into your PATH variable.
 
