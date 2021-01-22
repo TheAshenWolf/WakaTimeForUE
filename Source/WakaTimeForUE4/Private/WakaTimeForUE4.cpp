@@ -12,6 +12,8 @@
 #include <fstream>
 #include <string>
 #include <Editor/MainFrame/Public/Interfaces/IMainFrameModule.h>
+#include <Runtime/SlateCore/Public/Styling/SlateStyle.h>
+#include <Runtime/Projects/Public/Interfaces/IPluginManager.h>
 
 using namespace std;
 using namespace EAppMsgType;
@@ -400,16 +402,17 @@ void FWakaTimeForUE4Module::OpenSettingsWindow()
 
 void FWakaTimeForUE4Module::AddToolbarButton(FToolBarBuilder& Builder)
 {
-	FSlateIcon icon = FSlateIcon(FEditorStyle::GetStyleSetName(),
-			"LevelEditor.ViewOptions",
-			"LevelEditor.ViewOptions.Small");
+	TSharedRef<FSlateStyleSet> Style = MakeShareable(new FSlateStyleSet("WakaTime2DStyle"));
+	Style->SetContentRoot(IPluginManager::Get().FindPlugin("WakaTimeForUE4")->GetBaseDir() / TEXT("Resources"));
+	Style->Set("mainIcon", new FSlateImageBrush(TEXT("Icon128.png"), FVector2D(128,128), FSlateColor()));
+
+	FSlateIcon icon = FSlateIcon(Style.Get().GetStyleSetName(), "mainIcon");
 
 	Builder.AddToolBarButton(WakaCommands::Get().TestCommand, NAME_None, FText::FromString("Wakatime Settings"),
 		FText::FromString("Click me to display a message"),
 		icon, NAME_None);
 	//Style->Set("Niagara.CompileStatus.Warning", new IMAGE_BRUSH("Icons/CompileStatus_Warning", Icon40x40));
 }
-
 #undef LOCTEXT_NAMESPACE
 
 IMPLEMENT_MODULE(FWakaTimeForUE4Module, WakaTimeForUE4)
