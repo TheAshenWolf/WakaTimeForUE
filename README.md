@@ -30,7 +30,8 @@ Check if everything works with commands
 8. Enjoy! The plugin can now be used in your Unreal Engine 4 Project.
 
 ### Setting up the plugin
-1. When you first run the plugin, you get prompted with a window.
+1. When you first run the plugin, you get prompted with a window (if you have already used the plugin in a different project, your data should be kept saved.)
+    - You can open these settings from within the toolbar
 2. Paste in your API key
 3. Select whether you are a developer or a designer. This will determine if your HeartBeats are sent as "Coding" or "Designing"
 4. Save.
