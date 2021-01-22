@@ -116,16 +116,17 @@ void SendHeartbeat(bool fileSave, std::string filePath)
 	{
 		command += "--key " + apiKey + " ";
 	}
-	if (fileSave)
-	{
-		command += "--write ";
-	}
 
 	command += "--project \"" + GetProjectName() + "\" ";
 	command += "--entity-type \"app\" ";
 	command += "--language \"Unreal Engine\" ";
 	command += "--plugin \"unreal-wakatime/1.0.0\" ";
 	command += "--category " + (isDebugging ? "debugging" : devCategory) + " ";
+
+	if (fileSave)
+	{
+		command += "--write ";
+	}
 
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
@@ -295,19 +296,19 @@ void FWakaTimeForUE4Module::OnAddLevelToWorld(ULevel* Level)
 
 void FWakaTimeForUE4Module::OnPostSaveWorld(uint32 SaveFlags, UWorld* World, bool bSucces)
 {
-	SendHeartbeat(true, GetProjectName());
+	SendHeartbeat(false, GetProjectName());
 }
 
 void FWakaTimeForUE4Module::OnPostPIEStarted(bool bIsSimulating)
 {
 	isDebugging = true;
-	SendHeartbeat(true, GetProjectName());
+	SendHeartbeat(false, GetProjectName());
 }
 
 void FWakaTimeForUE4Module::OnPrePIEEnded(bool bIsSimulating)
 {
 	isDebugging = false;
-	SendHeartbeat(true, GetProjectName());
+	SendHeartbeat(false, GetProjectName());
 }
 
 
