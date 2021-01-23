@@ -1,6 +1,7 @@
 # WakaTimeForUE4
 
-![alt text](https://img.shields.io/badge/version-1.0.0-blue) 
+![plugin version](https://img.shields.io/badge/version-1.0.0-blue) ![Unreal Engine version](https://img.shields.io/badge/Unreal%20Engine%20version-4.26-blue)
+
 ---
 
 Make sure you have Python, pip and wakatime installed and **available from cmd/terminal**.
