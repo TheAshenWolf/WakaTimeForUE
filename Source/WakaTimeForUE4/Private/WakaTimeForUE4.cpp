@@ -268,7 +268,24 @@ void FWakaTimeForUE4Module::ShutdownModule()
 TSharedRef<FSlateStyleSet> FWakaTimeForUE4Module::Create()
 {
 	TSharedRef<FSlateStyleSet> Style = MakeShareable(new FSlateStyleSet("WakaTime2DStyle"));
-	FString projectDirectory(FPaths::ProjectPluginsDir() / "WakaTimeForUE4" / "Resources");
+
+	FString projectDirectory;
+
+	if (FPaths::DirectoryExists(FPaths::ProjectPluginsDir() / "WakaTimeForUE4-main")) {
+		projectDirectory = (FPaths::ProjectPluginsDir() / "WakaTimeForUE4-main" / "Resources");
+		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Main detected"));
+
+	}
+	else if (FPaths::DirectoryExists(FPaths::ProjectPluginsDir() / "WakaTimeForUE4-release")) {
+		projectDirectory = (FPaths::ProjectPluginsDir() / "WakaTimeForUE4-release" / "Resources");
+		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Release detected"));
+	}
+	else {
+		projectDirectory = (FPaths::ProjectPluginsDir() / "WakaTimeForUE4" / "Resources");
+		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Neither detected"));
+	}
+
+	
 	Style->SetContentRoot(projectDirectory);
 	Style->Set("mainIcon", new FSlateImageBrush(projectDirectory + "/Icon128.png", FVector2D(40, 40), FSlateColor()));
 	return Style;
