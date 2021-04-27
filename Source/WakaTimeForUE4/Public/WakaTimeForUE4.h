@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Modules/ModuleManager.h"
 #include <Runtime/SlateCore/Public/Styling/SlateStyle.h>
 
 class FWakaTimeForUE4Module : public IModuleInterface
@@ -24,6 +23,7 @@ public:
 	void OnPrePIEEnded(bool bIsSimulating);
 	void OpenSettingsWindow();
 	void AddToolbarButton(FToolBarBuilder& Builder);
+	void OnBlueprintCompiled();
 	FReply SetDeveloper();
 	FReply SetDesigner();
 	FReply SaveData();
@@ -42,7 +42,7 @@ public:
 			NSLOCTEXT("Wakatime", "WakatimeEditor", "Wakatime Plugin"),
 			NAME_None,
 			FEditorStyle::GetStyleSetName()
-			) {}
+			)	{}
 
 	virtual void RegisterCommands() override;
 

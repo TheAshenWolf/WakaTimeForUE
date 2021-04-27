@@ -25,7 +25,7 @@ public class WakaTimeForUE4 : ModuleRules
 		PublicDependencyModuleNames.AddRange(
 			new string[]
 			{
-				"Core",
+				"Core"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -38,10 +38,10 @@ public class WakaTimeForUE4 : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
-				"UnrealEd",
 				"LevelEditor",
 				"EditorStyle",
-				"EngineSettings"
+				"EngineSettings",
+				"UnrealEd"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

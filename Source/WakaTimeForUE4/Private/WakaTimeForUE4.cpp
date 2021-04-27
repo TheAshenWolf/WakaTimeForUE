@@ -13,9 +13,10 @@
 #include <string>
 #include <Editor/MainFrame/Public/Interfaces/IMainFrameModule.h>
 #include <Runtime/SlateCore/Public/Styling/SlateStyle.h>
-#include <Runtime/Projects/Public/Interfaces/IPluginManager.h>
 #include <Runtime/Engine/Public/Slate/SlateGameResources.h>
 #include "Styling/SlateStyleRegistry.h"
+#include "Editor/EditorEngine.h"
+#include "BlueprintEditor.h"
 
 using namespace std;
 using namespace EAppMsgType;
@@ -25,6 +26,7 @@ using namespace EAppMsgType;
 bool isDeveloper(true);
 bool isDesigner(false);
 bool isDebugging(false);
+bool isGEditorLinked(false);
 string position("Developer");
 string devCategory("coding");
 string apiKey("");
@@ -37,6 +39,7 @@ FDelegateHandle AddLevelToWorldHandle;
 FDelegateHandle PostSaveWorldHandle;
 FDelegateHandle PostPIEStartedHandle;
 FDelegateHandle PrePIEEndedHandle;
+FDelegateHandle BlueprintCompiledHandle;
 
 // UI Elements
 TSharedRef<STextBlock> positionBlock = SNew(STextBlock)
@@ -108,7 +111,7 @@ string GetProjectName()
 }
 
 void SendHeartbeat(bool fileSave, std::string filePath)
-{
+{	
 	UE_LOG(LogTemp, Warning, TEXT("WakaTime: Sending Heartbeat"));
 
 	string command(" /C start /B wakatime --entity \"" + filePath + "\" ");
@@ -230,9 +233,18 @@ void FWakaTimeForUE4Module::StartupModule()
 	PostSaveWorldHandle = FEditorDelegates::PostSaveWorld.AddRaw(this, &FWakaTimeForUE4Module::OnPostSaveWorld);
 	PostPIEStartedHandle = FEditorDelegates::PostPIEStarted.AddRaw(this, &FWakaTimeForUE4Module::OnPostPIEStarted);
 	PrePIEEndedHandle = FEditorDelegates::PrePIEEnded.AddRaw(this, &FWakaTimeForUE4Module::OnPrePIEEnded);
+	if (GEditor)
+	{
+		BlueprintCompiledHandle = GEditor->OnBlueprintCompiled().AddRaw(this, &FWakaTimeForUE4Module::OnBlueprintCompiled);
+		isGEditorLinked = true;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("WakaTime: No GEditor present"));
+	}
 
 	WakaCommands::Register();
-
+	
 	PluginCommands = MakeShareable(new FUICommandList);
 	PluginCommands->MapAction(
 		WakaCommands::Get().TestCommand,
@@ -263,6 +275,7 @@ void FWakaTimeForUE4Module::ShutdownModule()
 	FEditorDelegates::PostSaveWorld.Remove(PostSaveWorldHandle);
 	FEditorDelegates::PostPIEStarted.Remove(PostPIEStartedHandle);
 	FEditorDelegates::PrePIEEnded.Remove(PrePIEEndedHandle);
+	GEditor->OnBlueprintCompiled().Remove(BlueprintCompiledHandle);
 }
 
 TSharedRef<FSlateStyleSet> FWakaTimeForUE4Module::Create()
@@ -325,6 +338,10 @@ void FWakaTimeForUE4Module::OnPostPIEStarted(bool bIsSimulating)
 void FWakaTimeForUE4Module::OnPrePIEEnded(bool bIsSimulating)
 {
 	isDebugging = false;
+	SendHeartbeat(false, GetProjectName());
+}
+
+void FWakaTimeForUE4Module::OnBlueprintCompiled() {
 	SendHeartbeat(false, GetProjectName());
 }
 
