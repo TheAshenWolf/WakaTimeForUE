@@ -111,7 +111,7 @@ string GetProjectName()
 }
 
 void SendHeartbeat(bool fileSave, std::string filePath)
-{	
+{
 	UE_LOG(LogTemp, Warning, TEXT("WakaTime: Sending Heartbeat"));
 
 	string command(" /C start /B wakatime --entity \"" + filePath + "\" ");
@@ -141,7 +141,7 @@ void SendHeartbeat(bool fileSave, std::string filePath)
 	LPCWSTR exe = TEXT("C:\\Windows\\System32\\cmd.exe");
 
 	wchar_t wtext[256];
-	mbstowcs(wtext, command.c_str(), strlen(command.c_str()) + 1);//Plus null
+	mbstowcs(wtext, command.c_str(), strlen(command.c_str()) + 1); //Plus null
 	LPWSTR cmd = wtext;
 
 	bool success = CreateProcess(exe, // use cmd
@@ -186,7 +186,6 @@ void FWakaTimeForUE4Module::StartupModule()
 		StyleSetInstance = FWakaTimeForUE4Module::Create();
 		FSlateStyleRegistry::RegisterSlateStyle(*StyleSetInstance);
 	}
-
 
 
 	std::string line;
@@ -235,7 +234,8 @@ void FWakaTimeForUE4Module::StartupModule()
 	PrePIEEndedHandle = FEditorDelegates::PrePIEEnded.AddRaw(this, &FWakaTimeForUE4Module::OnPrePIEEnded);
 	if (GEditor)
 	{
-		BlueprintCompiledHandle = GEditor->OnBlueprintCompiled().AddRaw(this, &FWakaTimeForUE4Module::OnBlueprintCompiled);
+		BlueprintCompiledHandle = GEditor->OnBlueprintCompiled().AddRaw(
+			this, &FWakaTimeForUE4Module::OnBlueprintCompiled);
 		isGEditorLinked = true;
 	}
 	else
@@ -244,7 +244,7 @@ void FWakaTimeForUE4Module::StartupModule()
 	}
 
 	WakaCommands::Register();
-	
+
 	PluginCommands = MakeShareable(new FUICommandList);
 	PluginCommands->MapAction(
 		WakaCommands::Get().TestCommand,
@@ -275,7 +275,10 @@ void FWakaTimeForUE4Module::ShutdownModule()
 	FEditorDelegates::PostSaveWorld.Remove(PostSaveWorldHandle);
 	FEditorDelegates::PostPIEStarted.Remove(PostPIEStartedHandle);
 	FEditorDelegates::PrePIEEnded.Remove(PrePIEEndedHandle);
-	GEditor->OnBlueprintCompiled().Remove(BlueprintCompiledHandle);
+	if (GEditor)
+	{
+		GEditor->OnBlueprintCompiled().Remove(BlueprintCompiledHandle);
+	}
 }
 
 TSharedRef<FSlateStyleSet> FWakaTimeForUE4Module::Create()
@@ -284,21 +287,23 @@ TSharedRef<FSlateStyleSet> FWakaTimeForUE4Module::Create()
 
 	FString projectDirectory;
 
-	if (FPaths::DirectoryExists(FPaths::ProjectPluginsDir() / "WakaTimeForUE4-main")) {
+	if (FPaths::DirectoryExists(FPaths::ProjectPluginsDir() / "WakaTimeForUE4-main"))
+	{
 		projectDirectory = (FPaths::ProjectPluginsDir() / "WakaTimeForUE4-main" / "Resources");
 		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Main detected"));
-
 	}
-	else if (FPaths::DirectoryExists(FPaths::ProjectPluginsDir() / "WakaTimeForUE4-release")) {
+	else if (FPaths::DirectoryExists(FPaths::ProjectPluginsDir() / "WakaTimeForUE4-release"))
+	{
 		projectDirectory = (FPaths::ProjectPluginsDir() / "WakaTimeForUE4-release" / "Resources");
 		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Release detected"));
 	}
-	else {
+	else
+	{
 		projectDirectory = (FPaths::ProjectPluginsDir() / "WakaTimeForUE4" / "Resources");
 		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Neither detected"));
 	}
 
-	
+
 	Style->SetContentRoot(projectDirectory);
 	Style->Set("mainIcon", new FSlateImageBrush(projectDirectory + "/Icon128.png", FVector2D(40, 40), FSlateColor()));
 	return Style;
@@ -341,7 +346,8 @@ void FWakaTimeForUE4Module::OnPrePIEEnded(bool bIsSimulating)
 	SendHeartbeat(false, GetProjectName());
 }
 
-void FWakaTimeForUE4Module::OnBlueprintCompiled() {
+void FWakaTimeForUE4Module::OnBlueprintCompiled()
+{
 	SendHeartbeat(false, GetProjectName());
 }
 
@@ -453,11 +459,11 @@ void FWakaTimeForUE4Module::OpenSettingsWindow()
 
 void FWakaTimeForUE4Module::AddToolbarButton(FToolBarBuilder& Builder)
 {
-	FSlateIcon icon = FSlateIcon(TEXT("WakaTime2DStyle"), "mainIcon");//Style.Get().GetStyleSetName(), "Icon128.png");
+	FSlateIcon icon = FSlateIcon(TEXT("WakaTime2DStyle"), "mainIcon"); //Style.Get().GetStyleSetName(), "Icon128.png");
 
 	Builder.AddToolBarButton(WakaCommands::Get().TestCommand, NAME_None, FText::FromString("WakaTime"),
-		FText::FromString("WakaTime plugin settings"),
-		icon, NAME_None);
+	                         FText::FromString("WakaTime plugin settings"),
+	                         icon, NAME_None);
 	//Style->Set("Niagara.CompileStatus.Warning", new IMAGE_BRUSH("Icons/CompileStatus_Warning", Icon40x40));
 }
 #undef LOCTEXT_NAMESPACE
