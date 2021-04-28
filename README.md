@@ -46,11 +46,11 @@ This is my first ever project in C++, so it is definitely not perfect.
 If you have any suggestions how to improve it, or any bug reports, please, use the "Issues" tab.
 
 ### Troubleshooting
-Q: **The Wakatime icon in my editor is pink, what is wrong?**
+Q: **The Wakatime icon in my editor is pink, what is wrong?**  
 A: Your plugin folder is most likely named something like `WakaTimeForUE4-1.1.0`. Rename it to just `WakaTimeForUE4` and it will be fine.
 
-Q: **When saving a project, the plugin throws an error "Windows cannot find 'wakatime'. Make sure you've typed the name correctly, then try again.". What to do?**
+Q: **When saving a project, the plugin throws an error "Windows cannot find 'wakatime'. Make sure you've typed the name correctly, then try again.". What to do?**  
 A: First of all, check all the commands written above; If they function within the cmd, but not inside the unreal engine, try restarting your computer.
 
-Q: **The plugin failed to build.**
+Q: **The plugin failed to build.**  
 A: The branch `main` is a development branch, so it might contain code that does not compile. If this happens on the `release` branch (or any version tag), make sure you have all dependencies required for building C++ code. You usually install all of them when installing Visual Studio and checking both C++ and .NET.
