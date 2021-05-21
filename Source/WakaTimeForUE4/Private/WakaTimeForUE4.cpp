@@ -7,6 +7,8 @@
 #include "GeneralProjectSettings.h"
 #include "LevelEditor.h"
 #include "Editor.h"
+
+#include "Windows/AllowWindowsPlatformTypes.h"
 #include <Windows.h>
 #include <iostream>
 #include <fstream>
@@ -469,3 +471,5 @@ void FWakaTimeForUE4Module::AddToolbarButton(FToolBarBuilder& Builder)
 #undef LOCTEXT_NAMESPACE
 
 IMPLEMENT_MODULE(FWakaTimeForUE4Module, WakaTimeForUE4)
+
+#include "Windows/HideWindowsPlatformTypes.h"
