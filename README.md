@@ -25,27 +25,29 @@ Check if everything works with commands
 
 ### Installing the plugin to a Unreal Engine project
 <details>
-<summary>version >= 1.2</summary>
-1. Click the green button labeled "Code"  
-2. Click "Download ZIP"  
-3. Extract the folder  
-4. Locate the engine folder  
-5. Go inside the folder  
-6. Create a folder "Plugins", if there is not one yet.  
-7. Paste the WakaTimeForUE4 folder (it contains WakaTimeForUE4.uplugin in it) in there.  
-8. Rebuild the plugin  
-9. Enjoy! The plugin can now be used in your Unreal Engine 4 Project.  
+    <summary>version >= 1.2</summary>
+
+1. Click the green button labeled "Code"
+2. Click "Download ZIP"
+3. Extract the folder
+4. Locate the engine folder
+5. Go inside the folder
+6. Create a folder "Plugins", if there is not one yet.
+7. Paste the WakaTimeForUE4 folder (it contains WakaTimeForUE4.uplugin in it) in there.
+8. Rebuild the plugin
+9. Enjoy! The plugin can now be used in your Unreal Engine 4 Project.
 </details>
 <details>
-<summary>version < 1.2</summary>
-1. Click the green button labeled "Code"  
-2. Click "Download ZIP"  
-3. Extract the folder  
-4. Locate the project folder  
-5. Go inside the folder (You should see [projectName].uproject file)  
-6. Create a folder "Plugins", if there is not one yet.  
-7. Paste the WakaTimeForUE4 folder (it contains WakaTimeForUE4.uplugin in it) in there.  
-8. Enjoy! The plugin can now be used in your Unreal Engine 4 Project.  
+    <summary>version < 1.2</summary>
+
+1. Click the green button labeled "Code"
+2. Click "Download ZIP"
+3. Extract the folder
+4. Locate the project folder
+5. Go inside the folder (You should see [projectName].uproject file)
+6. Create a folder "Plugins", if there is not one yet.
+7. Paste the WakaTimeForUE4 folder (it contains WakaTimeForUE4.uplugin in it) in there.
+8. Enjoy! The plugin can now be used in your Unreal Engine 4 Project.
 </details>
 
 ### Setting up the plugin
