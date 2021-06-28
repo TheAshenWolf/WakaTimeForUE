@@ -24,18 +24,15 @@ Check if everything works with commands
 **wakatime -h**  
 
 ### Installing the plugin to a Unreal Engine project
+ - With the new version of 1.2 and above, the build will be included for the most recent version of the Engine.
 <details>
     <summary>version >= 1.2</summary>
 
-1. Click the green button labeled "Code"
-2. Click "Download ZIP"
-3. Extract the folder
-4. Locate the engine folder
-5. Go inside the folder
-6. Create a folder "Plugins", if there is not one yet.
-7. Paste the WakaTimeForUE4 folder (it contains WakaTimeForUE4.uplugin in it) in there.
-8. Rebuild the plugin
-9. Enjoy! The plugin can now be used in your Unreal Engine 4 Project.
+1. Go to releases
+2. Select the version that fits you
+3. Download WakaTimeForUE4.zip
+4. Go to C://Program Files (x86)/UE_[version]/Engine/Plugins
+5. Extract the zip here
 </details>
 <details>
     <summary>version < 1.2</summary>
