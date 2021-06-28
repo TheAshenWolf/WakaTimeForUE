@@ -1,7 +1,7 @@
 {
 	"FileVersion": 3,
 	"Version": 1,
-	"VersionName": "1.1.2",
+	"VersionName": "1.2.0",
 	"FriendlyName": "WakaTimeForUE4",
 	"Description": "WakaTime plugin for UE4. In development now.",
 	"Category": "Other",
@@ -17,7 +17,7 @@
 	"Modules": [
 		{
 			"Name": "WakaTimeForUE4",
-			"Type": "Runtime",
+			"Type": "Editor",
 			"LoadingPhase": "PostEngineInit"
 		}
 	]
