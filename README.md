@@ -31,7 +31,7 @@ Check if everything works with commands
 1. Go to releases
 2. Select the version that fits you
 3. Download WakaTimeForUE4.zip
-4. Go to C://Program Files (x86)/UE_[version]/Engine/Plugins
+4. Go to C://Program Files (x86)/Epic Games/UE_[version]/Engine/Plugins
 5. Extract the zip here
 </details>
 <details>
