@@ -116,7 +116,9 @@ void SendHeartbeat(bool fileSave, std::string filePath)
 {
 	UE_LOG(LogTemp, Warning, TEXT("WakaTime: Sending Heartbeat"));
 
-	string command(" /C start /B wakatime --entity \"" + filePath + "\" ");
+	cmd / c "(help FOO > nul || exit 0) && where FOO > nul 2> nul"
+
+	string command(" /C start /B wakatime-cli.exe --entity \"" + filePath + "\" ");
 	if (apiKey != "")
 	{
 		command += "--key " + apiKey + " ";
