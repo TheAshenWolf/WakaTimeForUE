@@ -158,33 +158,37 @@ void SendHeartbeat(bool fileSave, std::string filePath)
 	mbstowcs(wtext, command.c_str(), strlen(command.c_str()) + 1); //Plus null
 	LPWSTR cmd = wtext;
 
-	bool success = CreateProcess(exe, // use cmd
-	                             cmd, // the command
-	                             nullptr, // Process handle not inheritable
-	                             nullptr, // Thread handle not inheritable
-	                             FALSE, // Set handle inheritance to FALSE
-	                             CREATE_NO_WINDOW, // Dont open the console window
-	                             nullptr, // Use parent's environment block
-	                             nullptr, // Use parent's starting directory 
-	                             &si, // Pointer to STARTUPINFO structure
-	                             &pi); // Pointer to PROCESS_INFORMATION structure
+	const char* commie = command.c_str();
+
+	system(commie);
+
+	//bool success = CreateProcess(exe, // use cmd
+	//                             cmd, // the command
+	//                             nullptr, // Process handle not inheritable
+	//                             nullptr, // Thread handle not inheritable
+	//                             FALSE, // Set handle inheritance to FALSE
+	//                             CREATE_NO_WINDOW, // Dont open the console window
+	//                             nullptr, // Use parent's environment block
+	//                             nullptr, // Use parent's starting directory 
+	//                             &si, // Pointer to STARTUPINFO structure
+	//                             &pi); // Pointer to PROCESS_INFORMATION structure
 
 	// Wait until process exits.
-	WaitForSingleObject(pi.hProcess, INFINITE);
+	//WaitForSingleObject(pi.hProcess, INFINITE);
 
 	// Close process and thread handles. 
-	CloseHandle(pi.hProcess);
-	CloseHandle(pi.hThread);
+	//CloseHandle(pi.hProcess);
+	//CloseHandle(pi.hThread);
 
-	if (success)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Heartbeat successfully sent."));
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("WakaTime: Heartbeat couldn't be sent."));
-		UE_LOG(LogTemp, Error, TEXT("WakaTime: Error code = %d"), GetLastError());
-	}
+//	if (success)
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Heartbeat successfully sent."));
+//	}
+//	else
+//	{
+//		UE_LOG(LogTemp, Error, TEXT("WakaTime: Heartbeat couldn't be sent."));
+//		UE_LOG(LogTemp, Error, TEXT("WakaTime: Error code = %d"), GetLastError());
+//	}
 }
 
 void SendHeartbeat(bool fileSave, FString filepath)
@@ -257,7 +261,7 @@ void FWakaTimeForUE4Module::StartupModule()
 		UE_LOG(LogTemp, Error, TEXT("WakaTime: No GEditor present"));
 	}
 
-	//WakaCommands::Register();
+	WakaCommands::Register();
 
 	PluginCommands = MakeShareable(new FUICommandList);
 	//PluginCommands->MapAction(
