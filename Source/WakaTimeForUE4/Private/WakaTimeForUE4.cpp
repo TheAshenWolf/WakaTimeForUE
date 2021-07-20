@@ -86,11 +86,19 @@ FReply FWakaTimeForUE4Module::SaveData()
 {
 	UE_LOG(LogTemp, Warning, TEXT("WakaTime: Saving settings"));
 	apiKey = TCHAR_TO_UTF8(*(apiKeyBlock.Get().GetText().ToString()));
-	std::ofstream saveFile;
-	saveFile.open("wakatimeSaveData.txt");
-	saveFile << position << '\n';
-	saveFile << apiKey;
-	saveFile.close();
+	const char* homedrive = getenv("HOMEDRIVE");
+	const char* homepath = getenv("HOMEPATH");
+	std::string configFileDir = std::string(homedrive) + homepath + "/.wakatime.cfg";
+	//std::ofstream saveFile;
+	std::ofstream configFile;
+	//saveFile.open("wakatimeSaveData.txt");
+	configFile.open(configFileDir);
+	configFile << position << '\n';
+	configFile << apiKey;
+	configFile.close();
+	//saveFile << position << '\n';
+	//saveFile << apiKey;
+	//saveFile.close();
 	SettingsWindow.Get().RequestDestroyWindow();
 	return FReply::Handled();
 }
@@ -158,7 +166,7 @@ void SendHeartbeat(bool fileSave, std::string filePath)
 	mbstowcs(wtext, command.c_str(), strlen(command.c_str()) + 1); //Plus null
 	LPWSTR cmd = wtext;
 
-	const char* commie = command.c_str();
+	//const char* commie = command.c_str(); // I didn't know how to name this var since both cmd and command were used XD
 
 	//system(commie);
 
@@ -169,7 +177,7 @@ void SendHeartbeat(bool fileSave, std::string filePath)
 	                             nullptr, // Process handle not inheritable
 	                             nullptr, // Thread handle not inheritable
 	                             FALSE, // Set handle inheritance to FALSE
-	                             CREATE_NO_WINDOW, // Dont open the console window
+	                             CREATE_NO_WINDOW, // Don't open the console window // this doesn't seem to work, at least on my machine
 	                             nullptr, // Use parent's environment block
 	                             nullptr, // Use parent's starting directory 
 	                             &si, // Pointer to STARTUPINFO structure
@@ -209,7 +217,15 @@ void FWakaTimeForUE4Module::StartupModule()
 
 
 	std::string line;
-	std::ifstream infile("wakatimeSaveData.txt");
+	const char* homedrive = getenv("HOMEDRIVE");
+	const char* homepath = getenv("HOMEPATH");
+	std::string configFileDir = std::string(homedrive) + homepath + "/.wakatime.cfg";
+	std::ifstream infile(configFileDir);
+
+	if(infile.is_open())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("We've opened the infile"));
+	}
 
 	if (std::getline(infile, line))
 	{
