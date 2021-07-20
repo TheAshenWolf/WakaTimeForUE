@@ -116,9 +116,19 @@ void SendHeartbeat(bool fileSave, std::string filePath)
 {
 	UE_LOG(LogTemp, Warning, TEXT("WakaTime: Sending Heartbeat"));
 
-	cmd / c "(help FOO > nul || exit 0) && where FOO > nul 2> nul"
+	string command;
 
-	string command(" /C start /B wakatime-cli.exe --entity \"" + filePath + "\" ");
+
+	//look for an external command called 'wakatime'. if it exists, use the pure `wakatime` command, but if it doesn't, call the executable by its full-name
+	// WARN: have your wakatime-cli dir in your $PATH
+	if(system("where wakatime") == 0) //if we found an external command called 'wakatime'
+	{
+		command = (" /c start /b wakatime --entity \"" + filePath + "\" ");
+	} else 
+	{ 
+		command = (" /c start /b wakatime-cli.exe --entity \"" + filePath + "\" ");
+	}
+
 	if (apiKey != "")
 	{
 		command += "--key " + apiKey + " ";
@@ -247,13 +257,13 @@ void FWakaTimeForUE4Module::StartupModule()
 		UE_LOG(LogTemp, Error, TEXT("WakaTime: No GEditor present"));
 	}
 
-	WakaCommands::Register();
+	//WakaCommands::Register();
 
 	PluginCommands = MakeShareable(new FUICommandList);
-	PluginCommands->MapAction(
-		WakaCommands::Get().TestCommand,
-		FExecuteAction::CreateRaw(this, &FWakaTimeForUE4Module::OpenSettingsWindow)
-	);
+	//PluginCommands->MapAction(
+	//	WakaCommands::Get().TestCommand,
+	//	FExecuteAction::CreateRaw(this, &FWakaTimeForUE4Module::OpenSettingsWindow)
+	//);
 
 	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
 
