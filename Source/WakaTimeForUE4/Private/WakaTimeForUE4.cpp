@@ -122,7 +122,8 @@ FReply FWakaTimeForUE4Module::SaveData()
 	{
 		configFile.close();
 		std::ofstream configFile(configFileDir);
-		configFile << position << '\n';
+		configFile << "[settings]" << '\n';
+		//configFile << position << '\n'; what is this supposed to do? what is the "position" parameter supposed to mean?
 		configFile << "api_key=" << apiKey;
 		configFile.close();
 	}
@@ -270,9 +271,10 @@ void FWakaTimeForUE4Module::StartupModule()
 
 
 	std::string line;
+	std::string lineSettings = "[settings]";
 	
 	std::string configFileDir = std::string(homedrive) + homepath + "/.wakatime.cfg";
-	std::ifstream infile(configFileDir);
+	std::fstream infile(configFileDir);
 
 	if(infile.is_open())
 	{
@@ -294,8 +296,17 @@ void FWakaTimeForUE4Module::StartupModule()
 
 		if (std::getline(infile, line))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("WakaTime: Api key found."));
-			
+			UE_LOG(LogTemp, Warning, TEXT("WakaTime: API key found."));
+			if(std::getline(infile, lineSettings))
+			{
+				std::fstream auxFile;
+				auxFile << "[settings]" << '\n';
+				auxFile << infile.rdbuf();
+				infile.close();
+				std::ofstream infile(configFileDir, std::ios::app);
+				infile << auxFile.rdbuf();
+
+			}
 			apiKey = line.substr(line.find(" = ") + 3); // Pozitrone(Extract only the api key from the line);
 			apiKeyBlock.Get().SetText(FText::FromString(FString(UTF8_TO_TCHAR(apiKey.c_str()))));
 
