@@ -89,7 +89,7 @@ FReply FWakaTimeForUE4Module::SaveData()
 	UE_LOG(LogTemp, Warning, TEXT("WakaTime: Saving settings"));
 
 	std::string apiKeyBase = TCHAR_TO_UTF8(*(apiKeyBlock.Get().GetText().ToString()));
-	apiKey = apiKeyBase.substr(apiKeyBase.find(" = "));
+	apiKey = apiKeyBase.substr(apiKeyBase.find(" = ") + 3);
 
 	const char* homedrive = getenv("HOMEDRIVE");
 	const char* homepath = getenv("HOMEPATH");
@@ -122,7 +122,7 @@ FReply FWakaTimeForUE4Module::SaveData()
 	{
 		configFile << "[settings]" << '\n';
 		//configFile << position << '\n'; what is this supposed to do? what is the "position" parameter supposed to mean?
-		configFile << "api_key=" << apiKey;
+		configFile << "api_key = " << apiKey;
 		configFile.close();
 	}
 	//saveFile << position << '\n';
@@ -246,7 +246,6 @@ void FWakaTimeForUE4Module::StartupModule()
 	const char* homepath = getenv("HOMEPATH");
 	
 
-	
 	// look for an external command called 'wakatime'. if it exists, use the pure `wakatime` command, but if it doesn't, call the executable by its full name
 	// WARN: have your wakatime-cli dir in your $PATH
 	// Pozitrone(there is no scenario in which the wakatime command would stop working while the project is open, so we can cache this value)
