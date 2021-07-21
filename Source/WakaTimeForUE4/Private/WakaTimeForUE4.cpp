@@ -60,7 +60,7 @@ TSharedPtr<FSlateStyleSet> StyleSetInstance = NULL;
 
 void WakaCommands::RegisterCommands()
 {
-	UI_COMMAND(TestCommand, "Waka Time", "Waka time settings", EUserInterfaceActionType::Button, FInputChord());
+	UI_COMMAND(WakaTimeSettingsCommand, "Waka Time", "Waka time settings", EUserInterfaceActionType::Button, FInputChord());
 }
 
 FReply FWakaTimeForUE4Module::SetDeveloper()
@@ -327,10 +327,12 @@ void FWakaTimeForUE4Module::StartupModule()
 	WakaCommands::Register();
 
 	PluginCommands = MakeShareable(new FUICommandList);
-	//PluginCommands->MapAction(
-	//	WakaCommands::Get().TestCommand,
-	//	FExecuteAction::CreateRaw(this, &FWakaTimeForUE4Module::OpenSettingsWindow)
-	//);
+
+	// This handles the WakaTime settings button in the top bar
+	PluginCommands->MapAction(
+		WakaCommands::Get().WakaTimeSettingsCommand,
+		FExecuteAction::CreateRaw(this, &FWakaTimeForUE4Module::OpenSettingsWindow)
+	);
 
 	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
 
@@ -542,7 +544,7 @@ void FWakaTimeForUE4Module::AddToolbarButton(FToolBarBuilder& Builder)
 {
 	FSlateIcon icon = FSlateIcon(TEXT("WakaTime2DStyle"), "mainIcon"); //Style.Get().GetStyleSetName(), "Icon128.png");
 
-	Builder.AddToolBarButton(WakaCommands::Get().TestCommand, NAME_None, FText::FromString("WakaTime"),
+	Builder.AddToolBarButton(WakaCommands::Get().WakaTimeSettingsCommand, NAME_None, FText::FromString("WakaTime"),
 							 FText::FromString("WakaTime plugin settings"),
 							 icon, NAME_None);
 	//Style->Set("Niagara.CompileStatus.Warning", new IMAGE_BRUSH("Icons/CompileStatus_Warning", Icon40x40));

@@ -46,5 +46,5 @@ public:
 
 public:
 
-	TSharedPtr<FUICommandInfo> TestCommand;
+	TSharedPtr<FUICommandInfo> WakaTimeSettingsCommand;
 };
