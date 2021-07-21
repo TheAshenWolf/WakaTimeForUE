@@ -4,6 +4,9 @@
 
 ---
 
+#### If you're already using a WakaTime plugin (for example, in Visual Studio or whatever), you likely have `.wakatime` and `.wakatime.cfg` in your home directory. If you do, just put the plugin in its place and launch the engine, all should work without any additional configuration.
+ 
+
 Make sure you have Python, pip and wakatime installed and **available from cmd/terminal**.
 That means both installing it and adding it into your PATH variable.
 

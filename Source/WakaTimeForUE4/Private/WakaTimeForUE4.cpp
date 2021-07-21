@@ -86,11 +86,19 @@ FReply FWakaTimeForUE4Module::SaveData()
 {
 	UE_LOG(LogTemp, Warning, TEXT("WakaTime: Saving settings"));
 	apiKey = TCHAR_TO_UTF8(*(apiKeyBlock.Get().GetText().ToString()));
-	std::ofstream saveFile;
-	saveFile.open("wakatimeSaveData.txt");
-	saveFile << position << '\n';
-	saveFile << apiKey;
-	saveFile.close();
+	const char* homedrive = getenv("HOMEDRIVE");
+	const char* homepath = getenv("HOMEPATH");
+	std::string configFileDir = std::string(homedrive) + homepath + "/.wakatime.cfg";
+	//std::ofstream saveFile;
+	std::ofstream configFile;
+	//saveFile.open("wakatimeSaveData.txt");
+	configFile.open(configFileDir);
+	configFile << position << '\n';
+	configFile << apiKey;
+	configFile.close();
+	//saveFile << position << '\n';
+	//saveFile << apiKey;
+	//saveFile.close();
 	SettingsWindow.Get().RequestDestroyWindow();
 	return FReply::Handled();
 }
@@ -116,7 +124,19 @@ void SendHeartbeat(bool fileSave, std::string filePath)
 {
 	UE_LOG(LogTemp, Warning, TEXT("WakaTime: Sending Heartbeat"));
 
-	string command(" /C start /B wakatime --entity \"" + filePath + "\" ");
+	string command;
+
+
+	//look for an external command called 'wakatime'. if it exists, use the pure `wakatime` command, but if it doesn't, call the executable by its full-name
+	// WARN: have your wakatime-cli dir in your $PATH
+	if(system("where wakatime") == 0) //if we found an external command called 'wakatime'
+	{
+		command = (" /c start /b wakatime --entity \"" + filePath + "\" ");
+	} else 
+	{ 
+		command = (" /c start /b wakatime-cli.exe --entity \"" + filePath + "\" ");
+	}
+
 	if (apiKey != "")
 	{
 		command += "--key " + apiKey + " ";
@@ -146,12 +166,18 @@ void SendHeartbeat(bool fileSave, std::string filePath)
 	mbstowcs(wtext, command.c_str(), strlen(command.c_str()) + 1); //Plus null
 	LPWSTR cmd = wtext;
 
+	//const char* commie = command.c_str(); // I didn't know how to name this var since both cmd and command were used XD
+
+	//system(commie);
+
+	//WinExec(commie, SW_HIDE);
+
 	bool success = CreateProcess(exe, // use cmd
 	                             cmd, // the command
 	                             nullptr, // Process handle not inheritable
 	                             nullptr, // Thread handle not inheritable
 	                             FALSE, // Set handle inheritance to FALSE
-	                             CREATE_NO_WINDOW, // Dont open the console window
+	                             CREATE_NO_WINDOW, // Don't open the console window // this doesn't seem to work, at least on my machine
 	                             nullptr, // Use parent's environment block
 	                             nullptr, // Use parent's starting directory 
 	                             &si, // Pointer to STARTUPINFO structure
@@ -191,7 +217,15 @@ void FWakaTimeForUE4Module::StartupModule()
 
 
 	std::string line;
-	std::ifstream infile("wakatimeSaveData.txt");
+	const char* homedrive = getenv("HOMEDRIVE");
+	const char* homepath = getenv("HOMEPATH");
+	std::string configFileDir = std::string(homedrive) + homepath + "/.wakatime.cfg";
+	std::ifstream infile(configFileDir);
+
+	if(infile.is_open())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("We've opened the infile"));
+	}
 
 	if (std::getline(infile, line))
 	{
@@ -248,10 +282,10 @@ void FWakaTimeForUE4Module::StartupModule()
 	WakaCommands::Register();
 
 	PluginCommands = MakeShareable(new FUICommandList);
-	PluginCommands->MapAction(
-		WakaCommands::Get().TestCommand,
-		FExecuteAction::CreateRaw(this, &FWakaTimeForUE4Module::OpenSettingsWindow)
-	);
+	//PluginCommands->MapAction(
+	//	WakaCommands::Get().TestCommand,
+	//	FExecuteAction::CreateRaw(this, &FWakaTimeForUE4Module::OpenSettingsWindow)
+	//);
 
 	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
 
