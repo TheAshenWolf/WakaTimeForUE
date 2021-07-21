@@ -48,7 +48,7 @@ FDelegateHandle BlueprintCompiledHandle;
 // UI Elements
 TSharedRef<STextBlock> positionBlock = SNew(STextBlock)
 .Text(FText::FromString(FString(UTF8_TO_TCHAR(position.c_str())))).MinDesiredWidth(100).Justification(
-	                                                       ETextJustify::Right);
+	ETextJustify::Right);
 
 TSharedRef<SEditableTextBox> apiKeyBlock = SNew(SEditableTextBox)
 .Text(FText::FromString(FString(UTF8_TO_TCHAR(apiKey.c_str())))).MinDesiredWidth(500);
@@ -87,20 +87,44 @@ FReply FWakaTimeForUE4Module::SetDesigner()
 FReply FWakaTimeForUE4Module::SaveData()
 {
 	UE_LOG(LogTemp, Warning, TEXT("WakaTime: Saving settings"));
-	
+
 	std::string apiKeyBase = TCHAR_TO_UTF8(*(apiKeyBlock.Get().GetText().ToString()));
 	apiKey = apiKeyBase.substr(apiKeyBase.find(" = "));
-	
+
 	const char* homedrive = getenv("HOMEDRIVE");
 	const char* homepath = getenv("HOMEPATH");
 	std::string configFileDir = std::string(homedrive) + homepath + "/.wakatime.cfg";
 	//std::ofstream saveFile;
-	std::ofstream configFile;
+	std::fstream configFile(configFileDir);
+	bool foundKey = NULL;
 	//saveFile.open("wakatimeSaveData.txt");
-	configFile.open(configFileDir);
-	configFile << position << '\n';
-	configFile << apiKey;
-	configFile.close();
+	//configFile.open(configFileDir);
+	if(configFile.fail())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Couldn't open the config file"));
+	}
+	std::string tempLine;
+	while(std::getline(configFile, tempLine))
+	{
+		if(tempLine.find("api_key") != std::string::npos)
+		{
+			configFile.close();
+			foundKey = true;
+		}
+		else
+		{
+			foundKey = false;
+
+		}
+
+	}
+	if(!foundKey)
+	{
+		configFile << "[settings]" << '\n';
+		//configFile << position << '\n'; what is this supposed to do? what is the "position" parameter supposed to mean?
+		configFile << "api_key=" << apiKey;
+		configFile.close();
+	}
 	//saveFile << position << '\n';
 	//saveFile << apiKey;
 	//saveFile.close();
@@ -141,15 +165,15 @@ bool RunCmdCommand(string commandToRun, bool requireNonZeroProcess = false)
 	LPWSTR cmd = wtext;
 
 	bool success = CreateProcess(exe, // use cmd
-                                 cmd, // the command
-                                 nullptr, // Process handle not inheritable
-                                 nullptr, // Thread handle not inheritable
-                                 FALSE, // Set handle inheritance to FALSE
-                                 CREATE_NO_WINDOW, // Don't open the console window
-                                 nullptr, // Use parent's environment block
-                                 nullptr, // Use parent's starting directory 
-                                 &si, // Pointer to STARTUPINFO structure
-                                 &pi); // Pointer to PROCESS_INFORMATION structure
+								 cmd, // the command
+								 nullptr, // Process handle not inheritable
+								 nullptr, // Thread handle not inheritable
+								 FALSE, // Set handle inheritance to FALSE
+								 CREATE_NO_WINDOW, // Don't open the console window
+								 nullptr, // Use parent's environment block
+								 nullptr, // Use parent's starting directory 
+								 &si, // Pointer to STARTUPINFO structure
+								 &pi); // Pointer to PROCESS_INFORMATION structure
 
 	// Close process and thread handles.
 	bool returnValue;
@@ -223,7 +247,7 @@ void FWakaTimeForUE4Module::StartupModule()
 	
 
 	
-	// look for an external command called 'wakatime'. if it exists, use the pure `wakatime` command, but if it doesn't, call the executable by its full-name
+	// look for an external command called 'wakatime'. if it exists, use the pure `wakatime` command, but if it doesn't, call the executable by its full name
 	// WARN: have your wakatime-cli dir in your $PATH
 	// Pozitrone(there is no scenario in which the wakatime command would stop working while the project is open, so we can cache this value)
 	if(RunCmdCommand("where wakatime", true)) //if we found an external command called 'wakatime'
@@ -245,32 +269,30 @@ void FWakaTimeForUE4Module::StartupModule()
 
 
 	std::string line;
+	std::string lineSettings = "[settings]";
 	
 	std::string configFileDir = std::string(homedrive) + homepath + "/.wakatime.cfg";
-	std::ifstream infile(configFileDir);
+	std::fstream infile(configFileDir);
 
 	if(infile.is_open())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("We've opened the infile"));
 	}
 
-	if (std::getline(infile, line))
+	if(std::getline(infile, line))
 	{
-		if (line == "Developer")
+		if(std::getline(infile, line))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("WakaTime: Position set to Developer"));
-			SetDeveloper();
-		}
-		else if (line == "Designer")
-		{
-			UE_LOG(LogTemp, Warning, TEXT("WakaTime: Position set to Designer"));
-			SetDesigner();
-		}
+			UE_LOG(LogTemp, Warning, TEXT("WakaTime: API key found."));
+				if(std::getline(infile, lineSettings))
+				{
+					std::fstream auxFile;
+						auxFile << "[settings]" << '\n';
+						auxFile << infile.rdbuf();
+						infile << auxFile.rdbuf();
+						infile.close();
 
-		if (std::getline(infile, line))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("WakaTime: Api key found."));
-			
+				}
 			apiKey = line.substr(line.find(" = ") + 3); // Pozitrone(Extract only the api key from the line);
 			apiKeyBlock.Get().SetText(FText::FromString(FString(UTF8_TO_TCHAR(apiKey.c_str()))));
 
@@ -280,10 +302,6 @@ void FWakaTimeForUE4Module::StartupModule()
 		{
 			OpenSettingsWindow();
 		}
-	}
-	else
-	{
-		OpenSettingsWindow();
 	}
 
 	// Add Listeners
@@ -321,10 +339,10 @@ void FWakaTimeForUE4Module::StartupModule()
 		TSharedPtr<FExtender> NewToolbarExtender = MakeShareable(new FExtender);
 
 		NewToolbarExtender->AddToolBarExtension("Content",
-		                                        EExtensionHook::Before,
-		                                        PluginCommands,
-		                                        FToolBarExtensionDelegate::CreateRaw(
-			                                        this, &FWakaTimeForUE4Module::AddToolbarButton));
+												EExtensionHook::Before,
+												PluginCommands,
+												FToolBarExtensionDelegate::CreateRaw(
+													this, &FWakaTimeForUE4Module::AddToolbarButton));
 		LevelEditorModule.GetToolBarExtensibilityManager()->AddExtender(NewToolbarExtender);
 	}
 }
@@ -454,7 +472,7 @@ void FWakaTimeForUE4Module::OpenSettingsWindow()
 			  .VAlign(VAlign_Top)
 			[
 				SNew(STextBlock).Justification(ETextJustify::Left)
-				                .Text(FText::FromString(TEXT("I am working as a: "))).MinDesiredWidth(100)
+								.Text(FText::FromString(TEXT("I am working as a: "))).MinDesiredWidth(100)
 			]
 			+ SHorizontalBox::Slot()
 			  .HAlign(HAlign_Left)
@@ -476,7 +494,7 @@ void FWakaTimeForUE4Module::OpenSettingsWindow()
 				[
 					SNew(SButton)
 				.Text(FText::FromString(TEXT("Developer"))).ToolTipText(
-						             FText::FromString(TEXT("You activity will be marked as \"coding\"")))
+									 FText::FromString(TEXT("You activity will be marked as \"coding\"")))
 		.OnClicked(FOnClicked::CreateRaw(this, &FWakaTimeForUE4Module::SetDeveloper))
 				]
 			]
@@ -488,7 +506,7 @@ void FWakaTimeForUE4Module::OpenSettingsWindow()
 				[
 					SNew(SButton)
 				.Text(FText::FromString(TEXT("Designer"))).ToolTipText(
-						             FText::FromString(TEXT("You activity will be marked as \"designing\"")))
+									 FText::FromString(TEXT("You activity will be marked as \"designing\"")))
 		.OnClicked(FOnClicked::CreateRaw(this, &FWakaTimeForUE4Module::SetDesigner))
 				]
 
@@ -513,7 +531,7 @@ void FWakaTimeForUE4Module::OpenSettingsWindow()
 	{
 		FSlateApplication::Get().AddWindowAsNativeChild
 		(SettingsWindow, MainFrameModule.GetParentWindow()
-		                                .ToSharedRef());
+										.ToSharedRef());
 	}
 	else
 	{
@@ -526,8 +544,8 @@ void FWakaTimeForUE4Module::AddToolbarButton(FToolBarBuilder& Builder)
 	FSlateIcon icon = FSlateIcon(TEXT("WakaTime2DStyle"), "mainIcon"); //Style.Get().GetStyleSetName(), "Icon128.png");
 
 	Builder.AddToolBarButton(WakaCommands::Get().TestCommand, NAME_None, FText::FromString("WakaTime"),
-	                         FText::FromString("WakaTime plugin settings"),
-	                         icon, NAME_None);
+							 FText::FromString("WakaTime plugin settings"),
+							 icon, NAME_None);
 	//Style->Set("Niagara.CompileStatus.Warning", new IMAGE_BRUSH("Icons/CompileStatus_Warning", Icon40x40));
 }
 #undef LOCTEXT_NAMESPACE
