@@ -33,6 +33,8 @@ string position("Developer");
 string devCategory("coding");
 string apiKey("");
 
+string baseCommand("");
+
 // Handles
 FDelegateHandle NewActorsDroppedHandle;
 FDelegateHandle DeleteActorsEndHandle;
@@ -85,7 +87,10 @@ FReply FWakaTimeForUE4Module::SetDesigner()
 FReply FWakaTimeForUE4Module::SaveData()
 {
 	UE_LOG(LogTemp, Warning, TEXT("WakaTime: Saving settings"));
-	apiKey = TCHAR_TO_UTF8(*(apiKeyBlock.Get().GetText().ToString()));
+	
+	std::string apiKeyBase = TCHAR_TO_UTF8(*(apiKeyBlock.Get().GetText().ToString()));
+	apiKey = apiKeyBase.substr(apiKeyBase.find(" = "));
+	
 	const char* homedrive = getenv("HOMEDRIVE");
 	const char* homepath = getenv("HOMEPATH");
 	std::string configFileDir = std::string(homedrive) + homepath + "/.wakatime.cfg";
@@ -120,23 +125,60 @@ string GetProjectName()
 	return "Unreal Engine 4";
 }
 
+bool RunCmdCommand(string commandToRun, bool requireNonZeroProcess = false)
+{
+	STARTUPINFO si;
+	PROCESS_INFORMATION pi;
+
+	ZeroMemory(&si, sizeof(si));
+	si.cb = sizeof(si);
+	ZeroMemory(&pi, sizeof(pi));
+
+	LPCWSTR exe = TEXT("C:\\Windows\\System32\\cmd.exe");
+
+	wchar_t wtext[256];
+	mbstowcs(wtext, commandToRun.c_str(), strlen(commandToRun.c_str()) + 1); //Plus null
+	LPWSTR cmd = wtext;
+
+	bool success = CreateProcess(exe, // use cmd
+                                 cmd, // the command
+                                 nullptr, // Process handle not inheritable
+                                 nullptr, // Thread handle not inheritable
+                                 FALSE, // Set handle inheritance to FALSE
+                                 CREATE_NO_WINDOW, // Don't open the console window
+                                 nullptr, // Use parent's environment block
+                                 nullptr, // Use parent's starting directory 
+                                 &si, // Pointer to STARTUPINFO structure
+                                 &pi); // Pointer to PROCESS_INFORMATION structure
+
+	// Close process and thread handles.
+	bool returnValue;
+	
+	if (requireNonZeroProcess)
+	{
+		DWORD ec;
+		GetExitCodeProcess(pi.hProcess, &ec);
+		returnValue = (ec == 0);
+	}
+	else
+	{
+		returnValue = true;
+	}
+
+	CloseHandle(pi.hProcess);
+	CloseHandle(pi.hThread);
+	
+	return success && returnValue;
+}
+
 void SendHeartbeat(bool fileSave, std::string filePath)
 {
 	UE_LOG(LogTemp, Warning, TEXT("WakaTime: Sending Heartbeat"));
 
-	string command;
+	string command = baseCommand;
 
-
-	//look for an external command called 'wakatime'. if it exists, use the pure `wakatime` command, but if it doesn't, call the executable by its full-name
-	// WARN: have your wakatime-cli dir in your $PATH
-	if(system("where wakatime") == 0) //if we found an external command called 'wakatime'
-	{
-		command = (" /c start /b wakatime --entity \"" + filePath + "\" ");
-	} else 
-	{ 
-		command = (" /c start /b wakatime-cli.exe --entity \"" + filePath + "\" ");
-	}
-
+	command += " \"" + filePath + "\" ";
+	
 	if (apiKey != "")
 	{
 		command += "--key " + apiKey + " ";
@@ -153,42 +195,9 @@ void SendHeartbeat(bool fileSave, std::string filePath)
 		command += "--write ";
 	}
 
-	STARTUPINFO si;
-	PROCESS_INFORMATION pi;
-
-	ZeroMemory(&si, sizeof(si));
-	si.cb = sizeof(si);
-	ZeroMemory(&pi, sizeof(pi));
-
-	LPCWSTR exe = TEXT("C:\\Windows\\System32\\cmd.exe");
-
-	wchar_t wtext[256];
-	mbstowcs(wtext, command.c_str(), strlen(command.c_str()) + 1); //Plus null
-	LPWSTR cmd = wtext;
-
-	//const char* commie = command.c_str(); // I didn't know how to name this var since both cmd and command were used XD
-
-	//system(commie);
-
-	//WinExec(commie, SW_HIDE);
-
-	bool success = CreateProcess(exe, // use cmd
-	                             cmd, // the command
-	                             nullptr, // Process handle not inheritable
-	                             nullptr, // Thread handle not inheritable
-	                             FALSE, // Set handle inheritance to FALSE
-	                             CREATE_NO_WINDOW, // Don't open the console window // this doesn't seem to work, at least on my machine
-	                             nullptr, // Use parent's environment block
-	                             nullptr, // Use parent's starting directory 
-	                             &si, // Pointer to STARTUPINFO structure
-	                             &pi); // Pointer to PROCESS_INFORMATION structure
-
-	// Wait until process exits.
-	WaitForSingleObject(pi.hProcess, INFINITE);
-
-	// Close process and thread handles. 
-	CloseHandle(pi.hProcess);
-	CloseHandle(pi.hThread);
+	//UE_LOG(LogTemp, Warning, TEXT("%s"), *FString(UTF8_TO_TCHAR(command.c_str())));
+	
+	bool success = RunCmdCommand(command);
 
 	if (success)
 	{
@@ -209,6 +218,25 @@ void SendHeartbeat(bool fileSave, FString filepath)
 
 void FWakaTimeForUE4Module::StartupModule()
 {
+	const char* homedrive = getenv("HOMEDRIVE");
+	const char* homepath = getenv("HOMEPATH");
+	
+
+	
+	// look for an external command called 'wakatime'. if it exists, use the pure `wakatime` command, but if it doesn't, call the executable by its full-name
+	// WARN: have your wakatime-cli dir in your $PATH
+	// Pozitrone(there is no scenario in which the wakatime command would stop working while the project is open, so we can cache this value)
+	if(RunCmdCommand("where wakatime", true)) //if we found an external command called 'wakatime'
+	{
+		baseCommand = (" /c start /b wakatime --entity ");
+	}
+	else 
+	{
+		// Pozitrone(Wakatime-cli.exe is not in the path by default, which is why we have to use the user path)
+		baseCommand = (" /c start /b " + std::string(homedrive) + homepath + "/.wakatime/wakatime-cli/wakatime-cli.exe"  + " --entity ");
+	}
+
+	
 	if (!StyleSetInstance.IsValid())
 	{
 		StyleSetInstance = FWakaTimeForUE4Module::Create();
@@ -217,8 +245,7 @@ void FWakaTimeForUE4Module::StartupModule()
 
 
 	std::string line;
-	const char* homedrive = getenv("HOMEDRIVE");
-	const char* homepath = getenv("HOMEPATH");
+	
 	std::string configFileDir = std::string(homedrive) + homepath + "/.wakatime.cfg";
 	std::ifstream infile(configFileDir);
 
@@ -243,7 +270,8 @@ void FWakaTimeForUE4Module::StartupModule()
 		if (std::getline(infile, line))
 		{
 			UE_LOG(LogTemp, Warning, TEXT("WakaTime: Api key found."));
-			apiKey = line;
+			
+			apiKey = line.substr(line.find(" = ") + 3); // Pozitrone(Extract only the api key from the line);
 			apiKeyBlock.Get().SetText(FText::FromString(FString(UTF8_TO_TCHAR(apiKey.c_str()))));
 
 			infile.close();
