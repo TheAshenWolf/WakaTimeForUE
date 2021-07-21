@@ -95,7 +95,7 @@ FReply FWakaTimeForUE4Module::SaveData()
 	const char* homepath = getenv("HOMEPATH");
 	std::string configFileDir = std::string(homedrive) + homepath + "/.wakatime.cfg";
 	//std::ofstream saveFile;
-	std::ifstream configFile(configFileDir);
+	std::fstream configFile(configFileDir);
 	bool foundKey = NULL;
 	//saveFile.open("wakatimeSaveData.txt");
 	//configFile.open(configFileDir);
@@ -120,8 +120,6 @@ FReply FWakaTimeForUE4Module::SaveData()
 	}
 	if(!foundKey)
 	{
-		configFile.close();
-		std::ofstream configFile(configFileDir);
 		configFile << "[settings]" << '\n';
 		//configFile << position << '\n'; what is this supposed to do? what is the "position" parameter supposed to mean?
 		configFile << "api_key=" << apiKey;
@@ -281,32 +279,20 @@ void FWakaTimeForUE4Module::StartupModule()
 		UE_LOG(LogTemp, Warning, TEXT("We've opened the infile"));
 	}
 
-	if (std::getline(infile, line))
+	if(std::getline(infile, line))
 	{
-		if (line == "Developer")
-		{
-			UE_LOG(LogTemp, Warning, TEXT("WakaTime: Position set to Developer"));
-			SetDeveloper();
-		}
-		else if (line == "Designer")
-		{
-			UE_LOG(LogTemp, Warning, TEXT("WakaTime: Position set to Designer"));
-			SetDesigner();
-		}
-
-		if (std::getline(infile, line))
+		if(std::getline(infile, line))
 		{
 			UE_LOG(LogTemp, Warning, TEXT("WakaTime: API key found."));
-			if(std::getline(infile, lineSettings))
-			{
-				std::fstream auxFile;
-				auxFile << "[settings]" << '\n';
-				auxFile << infile.rdbuf();
-				infile.close();
-				std::ofstream infile(configFileDir, std::ios::app);
-				infile << auxFile.rdbuf();
+				if(std::getline(infile, lineSettings))
+				{
+					std::fstream auxFile;
+						auxFile << "[settings]" << '\n';
+						auxFile << infile.rdbuf();
+						infile << auxFile.rdbuf();
+						infile.close();
 
-			}
+				}
 			apiKey = line.substr(line.find(" = ") + 3); // Pozitrone(Extract only the api key from the line);
 			apiKeyBlock.Get().SetText(FText::FromString(FString(UTF8_TO_TCHAR(apiKey.c_str()))));
 
@@ -316,10 +302,6 @@ void FWakaTimeForUE4Module::StartupModule()
 		{
 			OpenSettingsWindow();
 		}
-	}
-	else
-	{
-		OpenSettingsWindow();
 	}
 
 	// Add Listeners
