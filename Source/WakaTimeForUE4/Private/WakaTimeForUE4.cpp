@@ -13,6 +13,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <sstream>
 #include <Editor/MainFrame/Public/Interfaces/IMainFrameModule.h>
 #include <Runtime/SlateCore/Public/Styling/SlateStyle.h>
 #include <Runtime/Engine/Public/Slate/SlateGameResources.h>
@@ -26,7 +27,7 @@ using namespace EAppMsgType;
 #define LOCTEXT_NAMESPACE "FWakaTimeForUE4Module"
 
 bool isGEditorLinked(false);
-string apiKey("");
+std::string apiKey("");
 
 string baseCommand("");
 
@@ -64,17 +65,15 @@ FReply FWakaTimeForUE4Module::SaveData()
 	UE_LOG(LogTemp, Warning, TEXT("WakaTime: Saving settings"));
 
 	std::string apiKeyBase = TCHAR_TO_UTF8(*(apiKeyBlock.Get().GetText().ToString()));
-	apiKey = apiKeyBase.substr(apiKeyBase.find(" = ") + 3);
+	apiKey = apiKeyBase.substr(apiKeyBase.find(" = ") + 1);
 
 	const char* homedrive = getenv("HOMEDRIVE");
 	const char* homepath = getenv("HOMEPATH");
 	
 	std::string configFileDir = std::string(homedrive) + homepath + "/.wakatime.cfg";
 	std::fstream configFile(configFileDir);
-	
-	bool foundKey = NULL;
 
-	if(!FileExists(configFileDir))
+	if(!FileExists(configFileDir) || configFile.fail())
 	{
 		configFile.open(configFileDir, std::fstream::out); // Pozitrone(Create the file if it does not exist) and write the data in it
 		configFile << "[settings]" << '\n';
@@ -84,33 +83,28 @@ FReply FWakaTimeForUE4Module::SaveData()
 		SettingsWindow.Get().RequestDestroyWindow();
 		return FReply::Handled();
 	}
-	
-	if(configFile.fail())
-	{
-		UE_LOG(LogTemp, Error, TEXT("WakaTime: Couldn't open the config file"));
-		SettingsWindow.Get().RequestDestroyWindow();
-		return FReply::Handled();
-	}
 
-	vector<string> data;
+	TArray<string> data;
 	std::string tempLine;
+	bool foundKey = false;
 	while(std::getline(configFile, tempLine))
 	{
 		if(tempLine.find("api_key") != std::string::npos)
 		{
-			data.push_back("api_key = " + apiKey); // if key was found, add the rewritten value to the data set
+			data.Add("api_key = " + apiKey); // if key was found, add the rewritten value to the data set
 			foundKey = true;
 		}
 		else
 		{
-			data.push_back(tempLine); // If key was not found, add the according line to the data set
-			foundKey = false;
+			data.Add(tempLine); // If key was not found, add the according line to the data set
 		}
 	}
+	configFile.close();
 	
 	if(!foundKey)
 	{
 		// There is no key present, add it
+		configFile.open(configFileDir, std::fstream::out);
 		configFile << "[settings]" << '\n';
 		configFile << "api_key = " << apiKey;
 		configFile.close();
@@ -118,8 +112,9 @@ FReply FWakaTimeForUE4Module::SaveData()
 	else
 	{
 		// Rewrite the file with the new override
+		configFile.open(configFileDir, std::fstream::out);
 		int index;
-		for (index = 0; index < (int) data.size(); index++) {
+		for (index = 0; index < (int) data.Num(); index++) {
 			configFile << data[index] << endl;
 		}
 		configFile.close();
