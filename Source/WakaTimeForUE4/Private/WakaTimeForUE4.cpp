@@ -48,6 +48,11 @@ TSharedRef<SWindow> SettingsWindow = SNew(SWindow);
 
 TSharedPtr<FSlateStyleSet> StyleSetInstance = NULL;
 
+// Pozitrone(According to StackOverflow - PherricOxide, this is the fastest method to check if file exists)
+inline bool FileExists (const std::string& name) {
+	struct stat buffer;   
+	return (stat (name.c_str(), &buffer) == 0); 
+}
 
 void WakaCommands::RegisterCommands()
 {
@@ -63,37 +68,63 @@ FReply FWakaTimeForUE4Module::SaveData()
 
 	const char* homedrive = getenv("HOMEDRIVE");
 	const char* homepath = getenv("HOMEPATH");
+	
 	std::string configFileDir = std::string(homedrive) + homepath + "/.wakatime.cfg";
-	//std::ofstream saveFile;
 	std::fstream configFile(configFileDir);
+	
 	bool foundKey = NULL;
-	//saveFile.open("wakatimeSaveData.txt");
-	//configFile.open(configFileDir);
+
+	if(!FileExists(configFileDir))
+	{
+		configFile.open(configFileDir, std::fstream::out); // Pozitrone(Create the file if it does not exist) and write the data in it
+		configFile << "[settings]" << '\n';
+		configFile << "api_key = " << apiKey;
+		configFile.close();
+
+		SettingsWindow.Get().RequestDestroyWindow();
+		return FReply::Handled();
+	}
+	
 	if(configFile.fail())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Couldn't open the config file"));
+		UE_LOG(LogTemp, Error, TEXT("WakaTime: Couldn't open the config file"));
+		SettingsWindow.Get().RequestDestroyWindow();
+		return FReply::Handled();
 	}
+
+	vector<string> data;
 	std::string tempLine;
 	while(std::getline(configFile, tempLine))
 	{
 		if(tempLine.find("api_key") != std::string::npos)
 		{
-			configFile.close();
+			data.push_back("api_key = " + apiKey); // if key was found, add the rewritten value to the data set
 			foundKey = true;
 		}
 		else
 		{
+			data.push_back(tempLine); // If key was not found, add the according line to the data set
 			foundKey = false;
-
 		}
-
 	}
+	
 	if(!foundKey)
 	{
+		// There is no key present, add it
 		configFile << "[settings]" << '\n';
 		configFile << "api_key = " << apiKey;
 		configFile.close();
 	}
+	else
+	{
+		// Rewrite the file with the new override
+		int index;
+		for (index = 0; index < (int) data.size(); index++) {
+			configFile << data[index] << endl;
+		}
+		configFile.close();
+	}
+	
 	SettingsWindow.Get().RequestDestroyWindow();
 	return FReply::Handled();
 }
