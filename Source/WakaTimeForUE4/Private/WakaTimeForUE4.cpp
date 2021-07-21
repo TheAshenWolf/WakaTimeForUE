@@ -25,12 +25,7 @@ using namespace EAppMsgType;
 
 #define LOCTEXT_NAMESPACE "FWakaTimeForUE4Module"
 
-bool isDeveloper(true);
-bool isDesigner(false);
-bool isDebugging(false);
 bool isGEditorLinked(false);
-string position("Developer");
-string devCategory("coding");
 string apiKey("");
 
 string baseCommand("");
@@ -46,10 +41,6 @@ FDelegateHandle PrePIEEndedHandle;
 FDelegateHandle BlueprintCompiledHandle;
 
 // UI Elements
-TSharedRef<STextBlock> positionBlock = SNew(STextBlock)
-.Text(FText::FromString(FString(UTF8_TO_TCHAR(position.c_str())))).MinDesiredWidth(100).Justification(
-	ETextJustify::Right);
-
 TSharedRef<SEditableTextBox> apiKeyBlock = SNew(SEditableTextBox)
 .Text(FText::FromString(FString(UTF8_TO_TCHAR(apiKey.c_str())))).MinDesiredWidth(500);
 
@@ -62,27 +53,6 @@ void WakaCommands::RegisterCommands()
 {
 	UI_COMMAND(WakaTimeSettingsCommand, "Waka Time", "Waka time settings", EUserInterfaceActionType::Button, FInputChord());
 }
-
-FReply FWakaTimeForUE4Module::SetDeveloper()
-{
-	isDeveloper = true;
-	isDesigner = false;
-	devCategory = "coding";
-	position = "Developer";
-	positionBlock.Get().SetText(FText::FromString(FString(UTF8_TO_TCHAR(position.c_str()))));
-	return FReply::Handled();
-}
-
-FReply FWakaTimeForUE4Module::SetDesigner()
-{
-	isDeveloper = false;
-	isDesigner = true;
-	devCategory = "designing";
-	position = "Designer";
-	positionBlock.Get().SetText(FText::FromString(FString(UTF8_TO_TCHAR(position.c_str()))));
-	return FReply::Handled();
-}
-
 
 FReply FWakaTimeForUE4Module::SaveData()
 {
@@ -121,13 +91,9 @@ FReply FWakaTimeForUE4Module::SaveData()
 	if(!foundKey)
 	{
 		configFile << "[settings]" << '\n';
-		//configFile << position << '\n'; what is this supposed to do? what is the "position" parameter supposed to mean?
 		configFile << "api_key = " << apiKey;
 		configFile.close();
 	}
-	//saveFile << position << '\n';
-	//saveFile << apiKey;
-	//saveFile.close();
 	SettingsWindow.Get().RequestDestroyWindow();
 	return FReply::Handled();
 }
@@ -195,7 +161,7 @@ bool RunCmdCommand(string commandToRun, bool requireNonZeroProcess = false)
 	return success && returnValue;
 }
 
-void SendHeartbeat(bool fileSave, std::string filePath)
+void SendHeartbeat(bool fileSave, std::string filePath, std::string activity)
 {
 	UE_LOG(LogTemp, Warning, TEXT("WakaTime: Sending Heartbeat"));
 
@@ -212,7 +178,7 @@ void SendHeartbeat(bool fileSave, std::string filePath)
 	command += "--entity-type \"app\" ";
 	command += "--language \"Unreal Engine\" ";
 	command += "--plugin \"unreal-wakatime/1.0.1\" ";
-	command += "--category " + (isDebugging ? "debugging" : devCategory) + " ";
+	command += "--category " + activity + " ";
 
 	if (fileSave)
 	{
@@ -234,10 +200,10 @@ void SendHeartbeat(bool fileSave, std::string filePath)
 	}
 }
 
-void SendHeartbeat(bool fileSave, FString filepath)
+void SendHeartbeat(bool fileSave, FString filepath, std::string activity)
 {
 	std::string path(TCHAR_TO_UTF8(*filepath));
-	SendHeartbeat(fileSave, path);
+	SendHeartbeat(fileSave, path, activity);
 }
 
 void FWakaTimeForUE4Module::StartupModule()
@@ -394,44 +360,42 @@ TSharedRef<FSlateStyleSet> FWakaTimeForUE4Module::Create()
 
 void FWakaTimeForUE4Module::OnNewActorDropped(const TArray<UObject*>& Objects, const TArray<AActor*>& Actors)
 {
-	SendHeartbeat(false, GetProjectName());
+	SendHeartbeat(false, GetProjectName(), "designing");
 }
 
 void FWakaTimeForUE4Module::OnDuplicateActorsEnd()
 {
-	SendHeartbeat(false, GetProjectName());
+	SendHeartbeat(false, GetProjectName(), "designing");
 }
 
 void FWakaTimeForUE4Module::OnDeleteActorsEnd()
 {
-	SendHeartbeat(false, GetProjectName());
+	SendHeartbeat(false, GetProjectName(), "designing");
 }
 
 void FWakaTimeForUE4Module::OnAddLevelToWorld(ULevel* Level)
 {
-	SendHeartbeat(false, GetProjectName());
+	SendHeartbeat(false, GetProjectName(), "designing");
 }
 
 void FWakaTimeForUE4Module::OnPostSaveWorld(uint32 SaveFlags, UWorld* World, bool bSucces)
 {
-	SendHeartbeat(false, GetProjectName());
+	SendHeartbeat(false, GetProjectName(), "designing");
 }
 
 void FWakaTimeForUE4Module::OnPostPIEStarted(bool bIsSimulating)
 {
-	isDebugging = true;
-	SendHeartbeat(false, GetProjectName());
+	SendHeartbeat(false, GetProjectName(), "debugging");
 }
 
 void FWakaTimeForUE4Module::OnPrePIEEnded(bool bIsSimulating)
 {
-	isDebugging = false;
-	SendHeartbeat(false, GetProjectName());
+	SendHeartbeat(false, GetProjectName(), "debugging");
 }
 
 void FWakaTimeForUE4Module::OnBlueprintCompiled()
 {
-	SendHeartbeat(false, GetProjectName());
+	SendHeartbeat(false, GetProjectName(), "coding");
 }
 
 
@@ -461,56 +425,6 @@ void FWakaTimeForUE4Module::OpenSettingsWindow()
 			  .VAlign(VAlign_Center)
 			[
 				apiKeyBlock
-			]
-		]
-		+ SVerticalBox::Slot()
-		  .HAlign(HAlign_Center)
-		  .VAlign(VAlign_Center)
-		[
-			SNew(SHorizontalBox)
-			+ SHorizontalBox::Slot()
-			  .HAlign(HAlign_Right)
-			  .VAlign(VAlign_Top)
-			[
-				SNew(STextBlock).Justification(ETextJustify::Left)
-								.Text(FText::FromString(TEXT("I am working as a: "))).MinDesiredWidth(100)
-			]
-			+ SHorizontalBox::Slot()
-			  .HAlign(HAlign_Left)
-			  .VAlign(VAlign_Top)
-			[
-				positionBlock
-			]
-		]
-		+ SVerticalBox::Slot()
-		  .HAlign(HAlign_Center)
-		  .VAlign(VAlign_Center)
-		[
-			SNew(SHorizontalBox)
-			+ SHorizontalBox::Slot()
-			  .HAlign(HAlign_Left)
-			  .VAlign(VAlign_Bottom)
-			[
-				SNew(SBox).WidthOverride(100)
-				[
-					SNew(SButton)
-				.Text(FText::FromString(TEXT("Developer"))).ToolTipText(
-									 FText::FromString(TEXT("You activity will be marked as \"coding\"")))
-		.OnClicked(FOnClicked::CreateRaw(this, &FWakaTimeForUE4Module::SetDeveloper))
-				]
-			]
-			+ SHorizontalBox::Slot()
-			  .HAlign(HAlign_Left)
-			  .VAlign(VAlign_Bottom)
-			[
-				SNew(SBox).WidthOverride(100)
-				[
-					SNew(SButton)
-				.Text(FText::FromString(TEXT("Designer"))).ToolTipText(
-									 FText::FromString(TEXT("You activity will be marked as \"designing\"")))
-		.OnClicked(FOnClicked::CreateRaw(this, &FWakaTimeForUE4Module::SetDesigner))
-				]
-
 			]
 		]
 		+ SVerticalBox::Slot()
