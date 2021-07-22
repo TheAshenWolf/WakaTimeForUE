@@ -482,6 +482,7 @@ void FWakaTimeForUE4Module::AddToolbarButton(FToolBarBuilder& Builder)
 
 bool UnzipArchive(std::string zipFile, std::string savePath)
 {
+	if (!FileExists(zipFile)) return false;
 
 	string extractCommand = "powershell -command \"Expand-Archive -Force \"" + zipFile + "\" \"" + savePath + "\"";
 	return RunCmdCommand(extractCommand, false, true, INFINITE);
@@ -537,17 +538,17 @@ void FWakaTimeForUE4Module::DownloadWakatimeCLI(std::string cliPath)
 	UE_LOG(LogTemp, Warning, TEXT("WakaTime: CLI not found, attempting download."));
 	
 	string url = "https://codeload.github.com/wakatime/wakatime/zip/master";
-	string destinationDirectory = std::string(homedrive) + homepath + "/.wakatime/";
-	string localZipFilePath = destinationDirectory + "wakatime-cli.zip";
+	string localZipFilePath = std::string(homedrive) + homepath + "/.wakatime/wakatime-cli/" + "wakatime-cli.zip";
 
-	bool successDownload = DownloadFile(url, destinationDirectory);
+	bool successDownload = DownloadFile(url, localZipFilePath);
 
 	if (successDownload)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Successfully downloaded wakatime-cli.zip"));
-		bool successUnzip = UnzipArchive(destinationDirectory, std::string(homedrive) + homepath + "/.wakatime/wakatime-cli/");
+		bool successUnzip = UnzipArchive(localZipFilePath, std::string(homedrive) + homepath + "/.wakatime/wakatime-cli/");
 
 		if (successUnzip) UE_LOG(LogTemp, Warning, TEXT("WakaTime: Successfully extracted wakatime-cli."));
+		InstallWakatimeCLI();
 	}
 	else
 	{
@@ -571,7 +572,7 @@ void FWakaTimeForUE4Module::InstallWakatimeCLI()
 		installCommand = folderPath + "/python.exe " + folderPath + "setup.py";
 	}
 
-	bool successInstall = RunCmdCommand(installCommand, false, false, INFINITE);
+	bool successInstall = RunCmdCommand(installCommand, false, false, 5000);
 
 	if (successInstall)
 	{
