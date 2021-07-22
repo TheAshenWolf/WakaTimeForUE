@@ -20,9 +20,10 @@
 #include "Styling/SlateStyleRegistry.h"
 #include "Editor/EditorEngine.h"
 #include "BlueprintEditor.h"
-#include<urlmon.h>
+#include <urlmon.h>
+#include <wow64apiset.h>
 
-#pragma comment(lib, "Urlmon.lib")
+#pragma comment(lib, "urlmon.lib")
 
 using namespace std;
 using namespace EAppMsgType;
@@ -33,6 +34,9 @@ bool isGEditorLinked(false);
 std::string apiKey("");
 
 string baseCommand("");
+
+const char* homedrive = getenv("HOMEDRIVE");
+const char* homepath = getenv("HOMEPATH");
 
 // Handles
 FDelegateHandle NewActorsDroppedHandle;
@@ -56,6 +60,18 @@ TSharedPtr<FSlateStyleSet> StyleSetInstance = NULL;
 inline bool FileExists (const std::string& name) {
 	struct stat buffer;   
 	return (stat (name.c_str(), &buffer) == 0); 
+}
+
+inline std::wstring s2ws(const std::string& s) // conversion to wstring
+{
+	int len;
+	int slength = (int)s.length() + 1;
+	len = MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, 0, 0); 
+	wchar_t* buf = new wchar_t[len];
+	MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, buf, len);
+	std::wstring r(buf);
+	delete[] buf;
+	return r;
 }
 
 void WakaCommands::RegisterCommands()
@@ -144,7 +160,7 @@ string GetProjectName()
 	return "Unreal Engine 4";
 }
 
-bool RunCmdCommand(string commandToRun, bool requireNonZeroProcess = false)
+bool RunCmdCommand(string commandToRun, bool requireNonZeroProcess = false, bool usePowershell = false, int waitMs = 0)
 {
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
@@ -154,12 +170,13 @@ bool RunCmdCommand(string commandToRun, bool requireNonZeroProcess = false)
 	ZeroMemory(&pi, sizeof(pi));
 
 	LPCWSTR exe = TEXT("C:\\Windows\\System32\\cmd.exe");
+	LPCWSTR powershell = TEXT("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe");
 
 	wchar_t wtext[256];
 	mbstowcs(wtext, commandToRun.c_str(), strlen(commandToRun.c_str()) + 1); //Plus null
 	LPWSTR cmd = wtext;
 
-	bool success = CreateProcess(exe, // use cmd
+	bool success = CreateProcess(usePowershell ? powershell : exe, // use cmd
 								 cmd, // the command
 								 nullptr, // Process handle not inheritable
 								 nullptr, // Thread handle not inheritable
@@ -184,6 +201,8 @@ bool RunCmdCommand(string commandToRun, bool requireNonZeroProcess = false)
 		returnValue = true;
 	}
 
+	WaitForSingleObject(pi.hProcess, waitMs);
+	
 	CloseHandle(pi.hProcess);
 	CloseHandle(pi.hThread);
 	
@@ -251,6 +270,7 @@ void FWakaTimeForUE4Module::StartupModule()
 	{
 		// Pozitrone(Wakatime-cli.exe is not in the path by default, which is why we have to use the user path)
 		baseCommand = (" /c start /b " + std::string(homedrive) + homepath + "/.wakatime/wakatime-cli/wakatime-cli.exe"  + " --entity ");
+		DownlodPython();
 		DownloadWakatimeCLI(std::string(homedrive) + homepath + "/.wakatime/wakatime-cli/wakatime-cli.exe");
 	}
 
@@ -459,6 +479,49 @@ void FWakaTimeForUE4Module::AddToolbarButton(FToolBarBuilder& Builder)
 	//Style->Set("Niagara.CompileStatus.Warning", new IMAGE_BRUSH("Icons/CompileStatus_Warning", Icon40x40));
 }
 
+
+bool UnzipArchive(std::string zipFile, std::string savePath)
+{
+
+	string extractCommand = "powershell -command \"Expand-Archive -Force \"" + zipFile + "\" \"" + savePath + "\"";
+	return RunCmdCommand(extractCommand, false, true, INFINITE);
+}
+
+bool DownloadFile(std::string url, std::string saveTo)
+{
+	string downloadCommand = "powershell -command \"(new-object System.Net.WebClient).DownloadFile('" + url + "','" + saveTo + "')\"";
+
+	UE_LOG(LogTemp, Warning, TEXT("%s"), *FString(UTF8_TO_TCHAR(downloadCommand.c_str())));
+	return RunCmdCommand(downloadCommand, false, true, INFINITE);
+}
+
+void FWakaTimeForUE4Module::DownloadPython()
+{	
+	if (RunCmdCommand("where python", true)) return;
+
+	string pythonVersion = "3.9.0";
+
+	WCHAR BufferW[256];	
+	string architecture = GetSystemWow64DirectoryW(BufferW, 256) == 0 ? "win32" : "amd64"; // Checks whether the computer is running 32bit or 64bit
+
+	string url = "https://www.python.org/ftp/python/" + pythonVersion + "/python-" + pythonVersion + "-embed-" + architecture + ".zip"; // location of embed python
+	string savePath = std::string(homedrive) + homepath + "/.wakatime/wakatime-cli/python.zip";
+
+	bool successDownload = DownloadFile(url, savePath);
+
+	if (successDownload)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Successfully downloaded Python.zip"));
+		bool successUnzip = UnzipArchive(savePath, std::string(homedrive) + homepath + "/.wakatime/wakatime-cli/");
+
+		if (successUnzip) UE_LOG(LogTemp, Warning, TEXT("WakaTime: Successfully extracted Python."));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("WakaTime: Error downloading python. Please, install it manually."));
+	}
+}
+
 void FWakaTimeForUE4Module::DownloadWakatimeCLI(std::string cliPath)
 {
 	if (FileExists(cliPath)) return; // if CLI exists, no need to change anything
@@ -479,7 +542,7 @@ void FWakaTimeForUE4Module::DownloadWakatimeCLI(std::string cliPath)
 }
 
 void FWakaTimeForUE4Module::HandleStartupApiCheck(std::string configFileDir)
-{
+{	
 	std::string line;
 	bool foundApiKey = false;
 
