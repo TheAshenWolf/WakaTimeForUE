@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include <string>
 #include <Runtime/SlateCore/Public/Styling/SlateStyle.h>
 
 class FWakaTimeForUE4Module : public IModuleInterface
@@ -25,6 +26,8 @@ public:
 	FReply SetDeveloper();
 	FReply SetDesigner();
 	FReply SaveData();
+	void DownloadWakatimeCLI(std::string cliPath);
+	void HandleStartupApiCheck(std::string configFileDir);
 
 	TSharedPtr<FUICommandList> PluginCommands;
 };

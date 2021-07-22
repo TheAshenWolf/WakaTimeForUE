@@ -20,6 +20,9 @@
 #include "Styling/SlateStyleRegistry.h"
 #include "Editor/EditorEngine.h"
 #include "BlueprintEditor.h"
+#include<urlmon.h>
+
+#pragma comment(lib, "Urlmon.lib")
 
 using namespace std;
 using namespace EAppMsgType;
@@ -248,6 +251,7 @@ void FWakaTimeForUE4Module::StartupModule()
 	{
 		// Pozitrone(Wakatime-cli.exe is not in the path by default, which is why we have to use the user path)
 		baseCommand = (" /c start /b " + std::string(homedrive) + homepath + "/.wakatime/wakatime-cli/wakatime-cli.exe"  + " --entity ");
+		DownloadWakatimeCLI(std::string(homedrive) + homepath + "/.wakatime/wakatime-cli/wakatime-cli.exe");
 	}
 
 	
@@ -455,13 +459,31 @@ void FWakaTimeForUE4Module::AddToolbarButton(FToolBarBuilder& Builder)
 	//Style->Set("Niagara.CompileStatus.Warning", new IMAGE_BRUSH("Icons/CompileStatus_Warning", Icon40x40));
 }
 
+void FWakaTimeForUE4Module::DownloadWakatimeCLI(std::string cliPath)
+{
+	if (FileExists(cliPath)) return; // if CLI exists, no need to change anything
+
+	const char* homedrive = getenv("HOMEDRIVE");
+	const char* homepath = getenv("HOMEPATH");
+	
+	string url;
+	
+	string destinationDirectory = std::string(homedrive) + homepath + "/.wakatime/";
+	string localZipFilePath = destinationDirectory + "wakatime-cli.zip";
+
+	LPCWSTR _url = std::wstring(destinationDirectory.begin(), destinationDirectory.end()).c_str();
+	LPCWSTR _path = std::wstring(localZipFilePath.begin(), localZipFilePath.end()).c_str();
+
+	URLDownloadToFile(NULL, _url, _path, 0, NULL);
+	
+}
 
 void FWakaTimeForUE4Module::HandleStartupApiCheck(std::string configFileDir)
 {
 	std::string line;
 	bool foundApiKey = false;
 
-	if(!FileExists(configFileDir))
+	if(!FileExists(configFileDir)) // if there is no .wakatime.cfg, open the settings window straight up
 	{
 		OpenSettingsWindow();
 		return;
@@ -482,7 +504,7 @@ void FWakaTimeForUE4Module::HandleStartupApiCheck(std::string configFileDir)
 
 	if (!foundApiKey)
 	{
-		OpenSettingsWindow();
+		OpenSettingsWindow(); // if key was not found, open the settings
 	}
 }
 
