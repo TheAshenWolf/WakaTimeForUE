@@ -258,32 +258,7 @@ void FWakaTimeForUE4Module::StartupModule()
 	}
 	
 	std::string configFileDir = std::string(homedrive) + homepath + "/.wakatime.cfg";
-	std::string line;
-	bool foundApiKey = false;
-
-	if(!FileExists(configFileDir))
-	{
-		OpenSettingsWindow();
-		return;
-	}
-
-	std::fstream configFile(configFileDir);
-	
-	while(std::getline(configFile, line))
-	{
-		if(line.find("api_key") != std::string::npos)
-		{
-			apiKey = line.substr(line.find(" = ") + 3); // Pozitrone(Extract only the api key from the line);
-			apiKeyBlock.Get().SetText(FText::FromString(FString(UTF8_TO_TCHAR(apiKey.c_str()))));
-			configFile.close();
-			foundApiKey = true;
-		}
-	}
-
-	if (!foundApiKey)
-	{
-		OpenSettingsWindow();
-	}
+	HandleStartupApiCheck(configFileDir);
 
 	// Add Listeners
 	NewActorsDroppedHandle = FEditorDelegates::OnNewActorsDropped.AddRaw(
@@ -479,6 +454,38 @@ void FWakaTimeForUE4Module::AddToolbarButton(FToolBarBuilder& Builder)
 							 icon, NAME_None);
 	//Style->Set("Niagara.CompileStatus.Warning", new IMAGE_BRUSH("Icons/CompileStatus_Warning", Icon40x40));
 }
+
+
+void FWakaTimeForUE4Module::HandleStartupApiCheck(std::string configFileDir)
+{
+	std::string line;
+	bool foundApiKey = false;
+
+	if(!FileExists(configFileDir))
+	{
+		OpenSettingsWindow();
+		return;
+	}
+
+	std::fstream configFile(configFileDir);
+	
+	while(std::getline(configFile, line))
+	{
+		if(line.find("api_key") != std::string::npos)
+		{
+			apiKey = line.substr(line.find(" = ") + 3); // Pozitrone(Extract only the api key from the line);
+			apiKeyBlock.Get().SetText(FText::FromString(FString(UTF8_TO_TCHAR(apiKey.c_str()))));
+			configFile.close();
+			foundApiKey = true;
+		}
+	}
+
+	if (!foundApiKey)
+	{
+		OpenSettingsWindow();
+	}
+}
+
 #undef LOCTEXT_NAMESPACE
 
 IMPLEMENT_MODULE(FWakaTimeForUE4Module, WakaTimeForUE4)
