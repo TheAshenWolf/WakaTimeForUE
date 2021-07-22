@@ -239,7 +239,6 @@ void FWakaTimeForUE4Module::StartupModule()
 	
 
 	// look for an external command called 'wakatime'. if it exists, use the pure `wakatime` command, but if it doesn't, call the executable by its full name
-	// WARN: have your wakatime-cli dir in your $PATH
 	// Pozitrone(there is no scenario in which the wakatime command would stop working while the project is open, so we can cache this value)
 	if(RunCmdCommand("where wakatime", true)) //if we found an external command called 'wakatime'
 	{
@@ -257,42 +256,33 @@ void FWakaTimeForUE4Module::StartupModule()
 		StyleSetInstance = FWakaTimeForUE4Module::Create();
 		FSlateStyleRegistry::RegisterSlateStyle(*StyleSetInstance);
 	}
-
-
-	std::string line;
-	std::string lineSettings = "[settings]";
 	
 	std::string configFileDir = std::string(homedrive) + homepath + "/.wakatime.cfg";
-	std::fstream infile(configFileDir);
+	std::string line;
+	bool foundApiKey = false;
 
-	if(infile.is_open())
+	if(!FileExists(configFileDir))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("We've opened the infile"));
+		OpenSettingsWindow();
+		return;
 	}
 
-	if(std::getline(infile, line))
+	std::fstream configFile(configFileDir);
+	
+	while(std::getline(configFile, line))
 	{
-		if(std::getline(infile, line))
+		if(line.find("api_key") != std::string::npos)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("WakaTime: API key found."));
-				if(std::getline(infile, lineSettings))
-				{
-					std::fstream auxFile;
-						auxFile << "[settings]" << '\n';
-						auxFile << infile.rdbuf();
-						infile << auxFile.rdbuf();
-						infile.close();
-
-				}
 			apiKey = line.substr(line.find(" = ") + 3); // Pozitrone(Extract only the api key from the line);
 			apiKeyBlock.Get().SetText(FText::FromString(FString(UTF8_TO_TCHAR(apiKey.c_str()))));
+			configFile.close();
+			foundApiKey = true;
+		}
+	}
 
-			infile.close();
-		}
-		else
-		{
-			OpenSettingsWindow();
-		}
+	if (!foundApiKey)
+	{
+		OpenSettingsWindow();
 	}
 
 	// Add Listeners
