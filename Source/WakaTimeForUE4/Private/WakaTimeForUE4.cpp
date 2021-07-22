@@ -203,7 +203,7 @@ void SendHeartbeat(bool fileSave, std::string filePath, std::string activity)
 	command += "--project \"" + GetProjectName() + "\" ";
 	command += "--entity-type \"app\" ";
 	command += "--language \"Unreal Engine\" ";
-	command += "--plugin \"unreal-wakatime/1.0.1\" ";
+	command += "--plugin \"unreal-wakatime/1.2.0\" ";
 	command += "--category " + activity + " ";
 
 	if (fileSave)
