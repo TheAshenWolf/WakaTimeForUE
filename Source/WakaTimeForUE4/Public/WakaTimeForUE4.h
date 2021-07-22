@@ -27,6 +27,7 @@ public:
 	FReply SetDesigner();
 	FReply SaveData();
 	void DownloadWakatimeCLI(std::string cliPath);
+	void InstallWakatimeCLI();
 	void DownloadPython();
 	void HandleStartupApiCheck(std::string configFileDir);
 
