@@ -141,7 +141,7 @@ string GetProjectName()
 	return "Unreal Engine 4";
 }
 
-bool RunCmdCommand(string commandToRun, bool requireNonZeroProcess = false, bool usePowershell = false, int waitMs = 0, bool runPure = false, string directory = "")
+bool RunCommand(string commandToRun, bool requireNonZeroProcess = false, string exeToRun = "C:\\Windows\\System32\\cmd.exe", int waitMs = 0, bool runPure = false, string directory = "")
 {
 	if (runPure)
 	{
@@ -501,11 +501,11 @@ bool DownloadFile(std::string url, std::string saveTo)
 
 void FWakaTimeForUE4Module::DownloadPython()
 {
-	/*if (RunCommand("where python"))
+	if (RunCommand("where python"))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Python found"));
 		return; // if Python exists, no need to change anything
-	}*/
+	}
 	UE_LOG(LogTemp, Warning, TEXT("WakaTime: Python not found, attempting download."));
 
 	string pythonVersion = "3.9.0";
@@ -567,19 +567,22 @@ void FWakaTimeForUE4Module::DownloadWakatimeCLI(std::string cliPath)
 void FWakaTimeForUE4Module::InstallWakatimeCli()
 {
 	string FolderPath = string(homedrive) + homepath + "/.wakatime/wakatime-cli/";
-	bool successInstall;
+	string InstallCommand = " start cmd /k \"cd /D " + FolderPath;
 	
 	
-	/*if (RunCommand("where python")) // if python found...
+	
+	if (RunCommand("where python")) // if python found...
 	{
 		// ... perform install using "$ python ..."
-		InstallCommand += " & python ./setup.py install";
+		InstallCommand += " && python ./setup.py install\"";
 	}
 	else
-	{*/
+	{
 		// ... else use the extracted python.exe
-		successInstall = RunCommand(" ./setup.py install", false, FolderPath + "\\python.exe", INFINITE, true);
-	//}
+		InstallCommand += " && ./python.exe ./setup.py install\"";
+	}
+
+	bool successInstall = RunCmdCommand(InstallCommand, false,  INFINITE, true);
 
 	if (successInstall)
 	{
