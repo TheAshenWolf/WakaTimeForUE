@@ -163,6 +163,8 @@ string GetProjectName()
 
 bool RunCmdCommand(string commandToRun, bool requireNonZeroProcess = false, bool usePowershell = false, int waitMs = 0)
 {
+	UE_LOG(LogTemp, Warning, TEXT("Running command: %s"), *FString(UTF8_TO_TCHAR(commandToRun.c_str())));
+	
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
 
@@ -204,8 +206,8 @@ bool RunCmdCommand(string commandToRun, bool requireNonZeroProcess = false, bool
 
 	WaitForSingleObject(pi.hProcess, waitMs);
 	
-	CloseHandle(pi.hProcess);
 	CloseHandle(pi.hThread);
+	CloseHandle(pi.hProcess);
 	
 	return success && returnValue;
 }
@@ -270,6 +272,9 @@ void FWakaTimeForUE4Module::StartupModule()
 	{
 		// Pozitrone(Wakatime-cli.exe is not in the path by default, which is why we have to use the user path)
 		baseCommand = (" /c start /b " + std::string(homedrive) + homepath + "/.wakatime/wakatime-cli/wakatime-cli.exe"  + " --entity ");
+
+		//RunCmdCommand("mkdir " + std::string(homedrive) + homepath + "\\.wakatime\\wakatime-cli", false, false, INFINITE);
+	
 		DownloadPython();
 		DownloadWakatimeCLI(std::string(homedrive) + homepath + "/.wakatime/wakatime-cli/wakatime-cli.exe");
 	}
@@ -497,7 +502,7 @@ bool DownloadFile(std::string url, std::string saveTo)
 }
 
 void FWakaTimeForUE4Module::DownloadPython()
-{	
+{
 	if (RunCmdCommand("where python"))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Python found"));
@@ -547,7 +552,12 @@ void FWakaTimeForUE4Module::DownloadWakatimeCLI(std::string cliPath)
 		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Successfully downloaded wakatime-cli.zip"));
 		bool successUnzip = UnzipArchive(localZipFilePath, std::string(homedrive) + homepath + "/.wakatime/wakatime-cli/");
 
-		if (successUnzip) UE_LOG(LogTemp, Warning, TEXT("WakaTime: Successfully extracted wakatime-cli."));
+		string moveTo = string(homedrive) + homepath + "/.wakatime/wakatime-cli/";
+		string moveFrom = moveTo + "wakatime-master";
+		
+		bool successMove = RunCmdCommand("move " + moveFrom + " " + moveTo);
+
+		if (successUnzip && successMove) UE_LOG(LogTemp, Warning, TEXT("WakaTime: Successfully extracted wakatime-cli."));
 		InstallWakatimeCLI();
 	}
 	else
