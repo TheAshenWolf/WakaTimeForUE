@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include <string>
 #include <Runtime/SlateCore/Public/Styling/SlateStyle.h>
+#include "WakaTimeHelpers.h"
 
 class FWakaTimeForUE4Module : public IModuleInterface
 {
@@ -23,11 +24,9 @@ public:
 	void OpenSettingsWindow();
 	void AddToolbarButton(FToolBarBuilder& Builder);
 	void OnBlueprintCompiled();
-	FReply SetDeveloper();
-	FReply SetDesigner();
 	FReply SaveData();
 	void DownloadWakatimeCLI(std::string cliPath);
-	void InstallWakatimeCLI();
+	void InstallWakatimeCli();
 	void DownloadPython();
 	void HandleStartupApiCheck(std::string configFileDir);
 
