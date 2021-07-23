@@ -26,8 +26,6 @@ public:
 	void OnBlueprintCompiled();
 	FReply SaveData();
 	void DownloadWakatimeCLI(std::string cliPath);
-	void InstallWakatimeCli();
-	void DownloadPython();
 	void HandleStartupApiCheck(std::string configFileDir);
 
 	TSharedPtr<FUICommandList> PluginCommands;

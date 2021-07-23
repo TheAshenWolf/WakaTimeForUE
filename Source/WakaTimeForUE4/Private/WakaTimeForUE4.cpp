@@ -35,6 +35,9 @@ string baseCommand("");
 
 const char* homedrive = getenv("HOMEDRIVE");
 const char* homepath = getenv("HOMEPATH");
+WCHAR BufferW[256];	
+string WakatimeArchitecture = GetSystemWow64DirectoryW(BufferW, 256) == 0 ? "386" : "amd64";
+string wakaCliVersion = "wakatime-cli-windows-" + WakatimeArchitecture + ".exe";
 
 // Handles
 FDelegateHandle NewActorsDroppedHandle;
@@ -161,12 +164,8 @@ bool RunCommand(string commandToRun, bool requireNonZeroProcess = false, string 
 	si.cb = sizeof(si);
 	ZeroMemory(&pi, sizeof(pi));
 
-	wchar_t wtext[256];
-	mbstowcs(wtext, commandToRun.c_str(), strlen(commandToRun.c_str()) + 1); //Plus null
-	LPWSTR cmd = wtext;
-
 	bool success = CreateProcess(*FString(UTF8_TO_TCHAR(exeToRun.c_str())), // use cmd or powershell
-								 cmd, // the command
+								 UTF8_TO_TCHAR(commandToRun.c_str()), // the command
 								 nullptr, // Process handle not inheritable
 								 nullptr, // Thread handle not inheritable
 								 FALSE, // Set handle inheritance to FALSE
@@ -214,6 +213,8 @@ void SendHeartbeat(bool fileSave, std::string filePath, std::string activity)
 
 	string command = baseCommand;
 
+	command += " --entity ";
+
 	command += " \"" + filePath + "\" ";
 	
 	if (apiKey != "")
@@ -233,8 +234,16 @@ void SendHeartbeat(bool fileSave, std::string filePath, std::string activity)
 	}
 
 	//UE_LOG(LogTemp, Warning, TEXT("%s"), *FString(UTF8_TO_TCHAR(command.c_str())));
+	bool success = false;
+	try
+	{
+		success = RunCmdCommand(command, false, INFINITE, true);
+	}
+	catch (int err) {
+		UE_LOG(LogTemp, Warning, TEXT("%i"), err);
+	}
 	
-	bool success = RunCmdCommand(command);
+	//bool success = RunCommand(command, false, baseCommand,INFINITE, true);
 
 	if (success)
 	{
@@ -255,9 +264,6 @@ void SendHeartbeat(bool fileSave, FString filepath, std::string activity)
 
 void FWakaTimeForUE4Module::StartupModule()
 {
-	const char* homedrive = getenv("HOMEDRIVE");
-	const char* homepath = getenv("HOMEPATH");
-
 	// look for an external command called 'wakatime'. if it exists, use the pure `wakatime` command, but if it doesn't, call the executable by its full name
 	// Pozitrone(there is no scenario in which the wakatime command would stop working while the project is open, so we can cache this value)
 	if(RunCmdCommand("where wakatime", true)) //if we found an external command called 'wakatime'
@@ -267,20 +273,19 @@ void FWakaTimeForUE4Module::StartupModule()
 	else 
 	{
 		// Pozitrone(Wakatime-cli.exe is not in the path by default, which is why we have to use the user path)
-		baseCommand = (std::string(homedrive) + homepath + "/.wakatime/wakatime-cli/wakatime-cli.exe"  + " --entity ");
-
-		string folderPath = string(homedrive) + homepath + "\\.wakatime";
+		baseCommand = "/c start /b  " +string(homedrive) + homepath + "\\.wakatime\\wakatime-cli\\" + wakaCliVersion;
+		string folderPath = string(homedrive) + homepath + "\\.wakatime\\wakatime-cli";
 		
 		RunCmdCommand("mkdir " + folderPath, false,  INFINITE);
 
-		DownloadWakatimeCLI(std::string(homedrive) + homepath + "/.wakatime/wakatime-cli/wakatime-cli.exe");
+		DownloadWakatimeCLI(std::string(homedrive) + homepath + "/.wakatime/wakatime-cli/" + wakaCliVersion);
 		
 	}
 
 	
 	if (!StyleSetInstance.IsValid())
 	{
-		StyleSetInstance = FWakaTimeForUE4Module::Create();
+		StyleSetInstance = Create();
 		FSlateStyleRegistry::RegisterSlateStyle(*StyleSetInstance);
 	}
 	
@@ -499,7 +504,7 @@ bool DownloadFile(std::string url, std::string saveTo)
 	return RunPowershellCommand(downloadCommand, false,  INFINITE, true);
 }
 
-void FWakaTimeForUE4Module::DownloadPython()
+/*void FWakaTimeForUE4Module::DownloadPython()
 {
 	if (RunCommand("where python"))
 	{
@@ -529,7 +534,7 @@ void FWakaTimeForUE4Module::DownloadPython()
 	{
 		UE_LOG(LogTemp, Error, TEXT("WakaTime: Error downloading python. Please, install it manually."));
 	}
-}
+}*/
 
 void FWakaTimeForUE4Module::DownloadWakatimeCLI(std::string cliPath)
 {
@@ -539,8 +544,9 @@ void FWakaTimeForUE4Module::DownloadWakatimeCLI(std::string cliPath)
 		return; // if CLI exists, no need to change anything
 	}
 	UE_LOG(LogTemp, Warning, TEXT("WakaTime: CLI not found, attempting download."));
+
+	string url = "https://github.com/wakatime/wakatime-cli/releases/download/v1.18.9/wakatime-cli-windows-" + WakatimeArchitecture + ".zip";
 	
-	string url = "https://codeload.github.com/wakatime/wakatime/zip/master";
 	string localZipFilePath = std::string(homedrive) + homepath + "/.wakatime/" + "wakatime-cli.zip";
 
 	bool successDownload = DownloadFile(url, localZipFilePath);
@@ -548,46 +554,19 @@ void FWakaTimeForUE4Module::DownloadWakatimeCLI(std::string cliPath)
 	if (successDownload)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Successfully downloaded wakatime-cli.zip"));
-		bool successUnzip = UnzipArchive(localZipFilePath, std::string(homedrive) + homepath + "/.wakatime/");
+		bool successUnzip = UnzipArchive(localZipFilePath, std::string(homedrive) + homepath + "/.wakatime/wakatime-cli");
 
-		string pathBase = string(homedrive) + homepath + "\\.wakatime";
+		//string pathBase = string(homedrive) + homepath + "\\.wakatime";
 		
-		bool successMove = RunCmdCommand("ren " + pathBase + "\\wakatime-master wakatime-cli", false,  INFINITE);
+		//bool successMove = RunCmdCommand("ren " + pathBase + "\\wakatime-master wakatime-cli", false,  INFINITE);
 
-		if (successUnzip && successMove) UE_LOG(LogTemp, Warning, TEXT("WakaTime: Successfully extracted wakatime-cli."));
-		DownloadPython();
-		InstallWakatimeCli();
+		if (successUnzip /*&& successMove*/) UE_LOG(LogTemp, Warning, TEXT("WakaTime: Successfully extracted wakatime-cli."));
+		//DownloadPython();
 	}
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("WakaTime: Error downloading python. Please, install it manually."));
 	}	
-}
-
-void FWakaTimeForUE4Module::InstallWakatimeCli()
-{
-	string FolderPath = string(homedrive) + homepath + "/.wakatime/wakatime-cli/";
-	string InstallCommand = " start cmd /k \"cd /D " + FolderPath;
-	
-	
-	
-	if (RunCommand("where python")) // if python found...
-	{
-		// ... perform install using "$ python ..."
-		InstallCommand += " && python ./setup.py install\"";
-	}
-	else
-	{
-		// ... else use the extracted python.exe
-		InstallCommand += " && ./python.exe ./setup.py install\"";
-	}
-
-	bool successInstall = RunCmdCommand(InstallCommand, false,  INFINITE, true);
-
-	if (successInstall)
-	{
-		UE_LOG(LogTemp, Error, TEXT("WakaTime: Successfully installed Wakatime-cli"));
-	}
 }
 
 void FWakaTimeForUE4Module::HandleStartupApiCheck(std::string configFileDir)
