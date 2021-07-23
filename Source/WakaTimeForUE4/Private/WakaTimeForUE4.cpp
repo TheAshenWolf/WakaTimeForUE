@@ -161,14 +161,11 @@ bool RunCmdCommand(string commandToRun, bool requireNonZeroProcess = false, bool
 	si.cb = sizeof(si);
 	ZeroMemory(&pi, sizeof(pi));
 
-	LPCWSTR exe = TEXT("C:\\Windows\\System32\\cmd.exe");
-	LPCWSTR powershell = TEXT("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe");
-
 	wchar_t wtext[256];
 	mbstowcs(wtext, commandToRun.c_str(), strlen(commandToRun.c_str()) + 1); //Plus null
 	LPWSTR cmd = wtext;
 
-	bool success = CreateProcess(usePowershell ? powershell : exe, // use cmd or powershell
+	bool success = CreateProcess(*FString(UTF8_TO_TCHAR(exeToRun.c_str())), // use cmd or powershell
 								 cmd, // the command
 								 nullptr, // Process handle not inheritable
 								 nullptr, // Thread handle not inheritable
@@ -199,6 +196,16 @@ bool RunCmdCommand(string commandToRun, bool requireNonZeroProcess = false, bool
 	CloseHandle(pi.hProcess);
 	
 	return success && returnValue;
+}
+
+bool RunPowershellCommand(string commandToRun, bool requireNonZeroProcess = false, int waitMs = 0, bool runPure = false, string directory = "")
+{
+	return RunCommand(commandToRun, requireNonZeroProcess, "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", waitMs, runPure, directory);
+}
+
+bool RunCmdCommand(string commandToRun, bool requireNonZeroProcess = false, int waitMs = 0, bool runPure = false, string directory = "")
+{
+	return RunCommand(commandToRun, requireNonZeroProcess, "C:\\Windows\\System32\\cmd.exe", waitMs, runPure, directory);
 }
 
 void SendHeartbeat(bool fileSave, std::string filePath, std::string activity)
@@ -264,7 +271,7 @@ void FWakaTimeForUE4Module::StartupModule()
 
 		string folderPath = string(homedrive) + homepath + "\\.wakatime";
 		
-		RunCmdCommand("mkdir " + folderPath, false, false, INFINITE);
+		RunCmdCommand("mkdir " + folderPath, false,  INFINITE);
 
 		DownloadWakatimeCLI(std::string(homedrive) + homepath + "/.wakatime/wakatime-cli/wakatime-cli.exe");
 		
@@ -481,7 +488,7 @@ bool UnzipArchive(std::string zipFile, std::string savePath)
 	if (!FWakaTimeHelpers::FileExists(zipFile)) return false;
 
 	string extractCommand = "powershell -command \"Expand-Archive -Force \"" + zipFile + "\" \"" + savePath + "\"";
-	return RunCmdCommand(extractCommand, false, true, INFINITE, true);
+	return RunPowershellCommand(extractCommand, false,  INFINITE, true);
 }
 
 bool DownloadFile(std::string url, std::string saveTo)
@@ -489,16 +496,16 @@ bool DownloadFile(std::string url, std::string saveTo)
 	string downloadCommand = "powershell -command \"(new-object System.Net.WebClient).DownloadFile('" + url + "','" + saveTo + "')\"";
 
 	UE_LOG(LogTemp, Warning, TEXT("%s"), *FString(UTF8_TO_TCHAR(downloadCommand.c_str())));
-	return RunCmdCommand(downloadCommand, false, true, INFINITE, true);
+	return RunPowershellCommand(downloadCommand, false,  INFINITE, true);
 }
 
 void FWakaTimeForUE4Module::DownloadPython()
 {
-	if (RunCmdCommand("where python"))
+	/*if (RunCommand("where python"))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Python found"));
 		return; // if Python exists, no need to change anything
-	}
+	}*/
 	UE_LOG(LogTemp, Warning, TEXT("WakaTime: Python not found, attempting download."));
 
 	string pythonVersion = "3.9.0";
@@ -545,7 +552,7 @@ void FWakaTimeForUE4Module::DownloadWakatimeCLI(std::string cliPath)
 
 		string pathBase = string(homedrive) + homepath + "\\.wakatime";
 		
-		bool successMove = RunCmdCommand("ren " + pathBase + "\\wakatime-master wakatime-cli", false, false, INFINITE);
+		bool successMove = RunCmdCommand("ren " + pathBase + "\\wakatime-master wakatime-cli", false,  INFINITE);
 
 		if (successUnzip && successMove) UE_LOG(LogTemp, Warning, TEXT("WakaTime: Successfully extracted wakatime-cli."));
 		DownloadPython();
@@ -560,21 +567,19 @@ void FWakaTimeForUE4Module::DownloadWakatimeCLI(std::string cliPath)
 void FWakaTimeForUE4Module::InstallWakatimeCli()
 {
 	string FolderPath = string(homedrive) + homepath + "/.wakatime/wakatime-cli/";
-	string InstallCommand = "cd " + FolderPath;
+	bool successInstall;
 	
 	
-	if (RunCmdCommand("where python")) // if python found...
+	/*if (RunCommand("where python")) // if python found...
 	{
 		// ... perform install using "$ python ..."
-		InstallCommand += " && python setup.py install";
+		InstallCommand += " & python ./setup.py install";
 	}
 	else
-	{
+	{*/
 		// ... else use the extracted python.exe
-		InstallCommand += " ./python.exe setup.py install";
-	}
-
-	bool successInstall = RunCmdCommand(InstallCommand, false, false, INFINITE, true);
+		successInstall = RunCommand(" ./setup.py install", false, FolderPath + "\\python.exe", INFINITE, true);
+	//}
 
 	if (successInstall)
 	{
