@@ -74,7 +74,7 @@ void FWakaTimeForUE4Module::StartupModule()
 
 	if (!StyleSetInstance.IsValid())
 	{
-		StyleSetInstance = CreateUI();
+		StyleSetInstance = CreateToolbarIcon();
 		FSlateStyleRegistry::RegisterSlateStyle(*StyleSetInstance);
 	}
 
@@ -168,19 +168,19 @@ void FWakaTimeForUE4Module::AssignGlobalVariables()
 	GWakaCliVersion = "wakatime-cli-windows-" + GWakatimeArchitecture + ".exe";
 }
 
-void FWakaTimeForUE4Module::HandleStartupApiCheck(string ConfigFileDir)
+void FWakaTimeForUE4Module::HandleStartupApiCheck(string ConfigFilePath)
 {
 	string Line;
 	bool bFoundApiKey = false;
 
-	if (!FWakaTimeHelpers::PathExists(ConfigFileDir))
+	if (!FWakaTimeHelpers::PathExists(ConfigFilePath))
 		// if there is no .wakatime.cfg, open the settings window straight up
 	{
 		OpenSettingsWindow();
 		return;
 	}
 
-	fstream ConfigFile(ConfigFileDir);
+	fstream ConfigFile(ConfigFilePath);
 
 	while (getline(ConfigFile, Line))
 	{
@@ -251,7 +251,7 @@ string FWakaTimeForUE4Module::GetProjectName()
 
 // UI methods
 
-TSharedRef<FSlateStyleSet> FWakaTimeForUE4Module::CreateUI()
+TSharedRef<FSlateStyleSet> FWakaTimeForUE4Module::CreateToolbarIcon()
 {
 	TSharedRef<FSlateStyleSet> Style = MakeShareable(new FSlateStyleSet("WakaTime2DStyle"));
 
@@ -286,7 +286,6 @@ void FWakaTimeForUE4Module::AddToolbarButton(FToolBarBuilder& Builder)
 	Builder.AddToolBarButton(FWakaCommands::Get().WakaTimeSettingsCommand, NAME_None, FText::FromString("WakaTime"),
 	                         FText::FromString("WakaTime plugin settings"),
 	                         Icon, NAME_None);
-	//Style->Set("Niagara.CompileStatus.Warning", new IMAGE_BRUSH("Icons/CompileStatus_Warning", Icon40x40));
 }
 
 void FWakaTimeForUE4Module::OpenSettingsWindow()
