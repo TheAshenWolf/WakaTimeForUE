@@ -36,7 +36,6 @@ public:
 class FWakaCommands : public TCommands<FWakaCommands>
 {
 public:
-
 	FWakaCommands()
 		: TCommands<FWakaCommands>
 		(
@@ -44,11 +43,12 @@ public:
 			NSLOCTEXT("Wakatime", "WakatimeEditor", "Wakatime Plugin"),
 			NAME_None,
 			FEditorStyle::GetStyleSetName()
-			)	{}
+		)
+	{
+	}
 
 	virtual void RegisterCommands() override;
 
 public:
-
 	TSharedPtr<FUICommandInfo> WakaTimeSettingsCommand;
 };

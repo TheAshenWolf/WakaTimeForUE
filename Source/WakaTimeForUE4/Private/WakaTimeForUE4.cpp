@@ -146,7 +146,7 @@ void FWakaTimeForUE4Module::ShutdownModule()
 void FWakaCommands::RegisterCommands()
 {
 	UI_COMMAND(WakaTimeSettingsCommand, "Waka Time", "Waka time settings", EUserInterfaceActionType::Button,
-			FInputChord());
+	           FInputChord());
 }
 
 
@@ -162,7 +162,7 @@ void FWakaTimeForUE4Module::AssignGlobalVariables()
 	GHomepath = nullptr;
 	size_t LenPath = NULL;
 	_dupenv_s(&GHomepath, &LenPath, "HOMEPATH");
-	
+
 	WCHAR BufferW[256];
 	GWakatimeArchitecture = GetSystemWow64DirectoryW(BufferW, 256) == 0 ? "386" : "amd64";
 	GWakaCliVersion = "wakatime-cli-windows-" + GWakatimeArchitecture + ".exe";
@@ -175,10 +175,10 @@ void FWakaTimeForUE4Module::HandleStartupApiCheck(string ConfigFileDir)
 
 	if (!FWakaTimeHelpers::PathExists(ConfigFileDir))
 		// if there is no .wakatime.cfg, open the settings window straight up
-		{
+	{
 		OpenSettingsWindow();
 		return;
-		}
+	}
 
 	fstream ConfigFile(ConfigFileDir);
 
@@ -206,7 +206,7 @@ void FWakaTimeForUE4Module::DownloadWakatimeCli(string CliPath)
 		UE_LOG(LogTemp, Warning, TEXT("WakaTime: CLI found"));
 		return; // if CLI exists, no need to change anything
 	}
-	
+
 	UE_LOG(LogTemp, Warning, TEXT("WakaTime: CLI not found, attempting download."));
 
 	string URL = "https://github.com/wakatime/wakatime-cli/releases/download/v1.18.9/wakatime-cli-windows-" +
@@ -220,7 +220,7 @@ void FWakaTimeForUE4Module::DownloadWakatimeCli(string CliPath)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Successfully downloaded wakatime-cli.zip"));
 		bool bSuccessUnzip = FWakaTimeHelpers::UnzipArchive(LocalZipFilePath,
-										string(GHomedrive) + GHomepath + "/.wakatime/wakatime-cli");
+		                                                    string(GHomedrive) + GHomepath + "/.wakatime/wakatime-cli");
 
 		if (bSuccessUnzip) UE_LOG(LogTemp, Warning, TEXT("WakaTime: Successfully extracted wakatime-cli."));
 	}
@@ -284,8 +284,8 @@ void FWakaTimeForUE4Module::AddToolbarButton(FToolBarBuilder& Builder)
 	FSlateIcon Icon = FSlateIcon(TEXT("WakaTime2DStyle"), "mainIcon"); //Style.Get().GetStyleSetName(), "Icon128.png");
 
 	Builder.AddToolBarButton(FWakaCommands::Get().WakaTimeSettingsCommand, NAME_None, FText::FromString("WakaTime"),
-							FText::FromString("WakaTime plugin settings"),
-							Icon, NAME_None);
+	                         FText::FromString("WakaTime plugin settings"),
+	                         Icon, NAME_None);
 	//Style->Set("Niagara.CompileStatus.Warning", new IMAGE_BRUSH("Icons/CompileStatus_Warning", Icon40x40));
 }
 
@@ -299,27 +299,27 @@ void FWakaTimeForUE4Module::OpenSettingsWindow()
 	[
 		SNew(SVerticalBox)
 		+ SVerticalBox::Slot()
-		.HAlign(HAlign_Center)
-		.VAlign(VAlign_Center)
+		  .HAlign(HAlign_Center)
+		  .VAlign(VAlign_Center)
 		[
 			SNew(SVerticalBox)
 			+ SVerticalBox::Slot()
-			.HAlign(HAlign_Left)
-			.VAlign(VAlign_Top)
+			  .HAlign(HAlign_Left)
+			  .VAlign(VAlign_Top)
 			[
 				SNew(STextBlock)
 				.Text(FText::FromString(TEXT("Your api key:"))).MinDesiredWidth(500)
 			]
 			+ SVerticalBox::Slot()
-			.HAlign(HAlign_Center)
-			.VAlign(VAlign_Center)
+			  .HAlign(HAlign_Center)
+			  .VAlign(VAlign_Center)
 			[
 				GAPIKeyBlock
 			]
 		]
 		+ SVerticalBox::Slot()
-		.HAlign(HAlign_Center)
-		.VAlign(VAlign_Bottom)
+		  .HAlign(HAlign_Center)
+		  .VAlign(VAlign_Bottom)
 		[
 			SNew(SBox).WidthOverride(100)
 			[
@@ -336,7 +336,7 @@ void FWakaTimeForUE4Module::OpenSettingsWindow()
 	{
 		FSlateApplication::Get().AddWindowAsNativeChild
 		(SettingsWindow, MainFrameModule.GetParentWindow()
-										.ToSharedRef());
+		                                .ToSharedRef());
 	}
 	else
 	{

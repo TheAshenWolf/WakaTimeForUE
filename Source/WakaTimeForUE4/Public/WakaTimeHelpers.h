@@ -24,8 +24,9 @@ public:
 	/// <param name="Directory"> Path to the directory to start the process in </param>
 	/// <returns> True, if process succeeds (and its return code is non-zero if required) </returns>
 	static bool RunCommand(std::string CommandToRun, bool bRequireNonZeroProcess = false,
-								std::string ExeToRun = "C:\\Windows\\System32\\cmd.exe", int WaitMs = 0, bool bRunPure = false,
-								std::string Directory = "");
+	                       std::string ExeToRun = "C:\\Windows\\System32\\cmd.exe", int WaitMs = 0,
+	                       bool bRunPure = false,
+	                       std::string Directory = "");
 
 	/// <summary>
 	///	Overload for RunCommand that uses Powershell
@@ -36,8 +37,9 @@ public:
 	/// <param name="bRunPure"> If false, prepends "/c start /b" to the command (mainly for CMD use) </param>
 	/// <param name="Directory"> Path to the directory to start the process in </param>
 	/// <returns> True, if process succeeds (and its return code is non-zero if required) </returns>
-	static bool RunPowershellCommand(std::string CommandToRun, bool bRequireNonZeroProcess = false, int WaitMs = 0, bool bRunPure = false,
-				std::string Directory = "");
+	static bool RunPowershellCommand(std::string CommandToRun, bool bRequireNonZeroProcess = false, int WaitMs = 0,
+	                                 bool bRunPure = false,
+	                                 std::string Directory = "");
 
 	/// <summary>
 	///	Overload for RunCommand that uses Cmd
@@ -48,8 +50,9 @@ public:
 	/// <param name="bRunPure"> If false, prepends "/c start /b" to the command (mainly for CMD use) </param>
 	/// <param name="Directory"> Path to the directory to start the process in </param>
 	/// <returns> True, if process succeeds (and its return code is non-zero if required) </returns>
-	static bool RunCmdCommand(std::string CommandToRun, bool bRequireNonZeroProcess = false, int WaitMs = 0, bool bRunPure = false,
-				std::string Directory = "");
+	static bool RunCmdCommand(std::string CommandToRun, bool bRequireNonZeroProcess = false, int WaitMs = 0,
+	                          bool bRunPure = false,
+	                          std::string Directory = "");
 
 	/// <summary>
 	/// Unzips a .zip archive into a directory using powershell
