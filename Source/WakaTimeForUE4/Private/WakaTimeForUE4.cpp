@@ -275,31 +275,23 @@ void SendHeartbeat(bool fileSave, FString filepath, std::string activity)
 
 void FWakaTimeForUE4Module::StartupModule()
 {
-	// look for an external command called 'wakatime'. if it exists, use the pure `wakatime` command, but if it doesn't, call the executable by its full name
-	// Pozitrone(there is no scenario in which the wakatime command would stop working while the project is open, so we can cache this value)
-	if (RunCmdCommand("where wakatime", true)) //if we found an external command called 'wakatime'
+	// testing for "wakatime-cli.exe" which is used by most IDEs
+	if (RunCmdCommand("where /r " + string(homedrive) + homepath + "\\.wakatime\\wakatime-cli\\ wakatime-cli.exe",
+	                  true))
 	{
-		baseCommand = ("wakatime ");
+		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Found IDE wakatime-cli"));
+		baseCommand = (string(homedrive) + homepath + "\\.wakatime\\wakatime-cli\\wakatime-cli.exe ");
 	}
 	else
 	{
-		// testing for "wakatime-cli.exe" which is used by most IDEs
-		if (RunCmdCommand("where /r " + string(homedrive) + homepath + "\\.wakatime\\wakatime-cli\\ wakatime-cli.exe" , true))
-		{
-			baseCommand = (string(homedrive) + homepath + "\\.wakatime\\wakatime-cli\\wakatime-cli.exe ");
-		}
-		else
-		{
-			// neither way was found; download and install the new version
-			baseCommand = "/c start /b  " + string(homedrive) + homepath + "\\.wakatime\\wakatime-cli\\" + wakaCliVersion;
-			string folderPath = string(homedrive) + homepath + "\\.wakatime\\wakatime-cli";
-			RunCmdCommand("mkdir " + folderPath, false, INFINITE);
-			DownloadWakatimeCLI(std::string(homedrive) + homepath + "/.wakatime/wakatime-cli/" + wakaCliVersion);
-		}
-
-
-		// Pozitrone(Wakatime-cli.exe is not in the path by default, which is why we have to use the user path)
+		// neither way was found; download and install the new version
+		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Did not find wakatime"));
+		baseCommand = "/c start /b  " + string(homedrive) + homepath + "\\.wakatime\\wakatime-cli\\" + wakaCliVersion;
+		string folderPath = string(homedrive) + homepath + "\\.wakatime\\wakatime-cli";
+		RunCmdCommand("mkdir " + folderPath, false, INFINITE);
+		DownloadWakatimeCLI(std::string(homedrive) + homepath + "/.wakatime/wakatime-cli/" + wakaCliVersion);
 	}
+	// Pozitrone(Wakatime-cli.exe is not in the path by default, which is why we have to use the user path)
 
 
 	if (!StyleSetInstance.IsValid())
