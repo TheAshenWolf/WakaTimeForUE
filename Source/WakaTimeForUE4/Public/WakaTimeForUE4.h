@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include <string>
 #include <Runtime/SlateCore/Public/Styling/SlateStyle.h>
-#include "WakaTimeHelpers.h"
 
 class FWakaTimeForUE4Module : public IModuleInterface
 {
