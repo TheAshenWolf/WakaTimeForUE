@@ -12,7 +12,7 @@ public:
 	/** IModuleInterface implementation */
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
-	TSharedRef<FSlateStyleSet> Create();
+	TSharedRef<FSlateStyleSet> CreateUI();
 	void OnNewActorDropped(const TArray<UObject*>& Objects, const TArray<AActor*>& Actors);
 	void OnDuplicateActorsEnd();
 	void OnDeleteActorsEnd();
@@ -24,6 +24,8 @@ public:
 	void AddToolbarButton(FToolBarBuilder& Builder);
 	void OnBlueprintCompiled();
 	FReply SaveData();
+	std::string GetProjectName();
+	void SendHeartbeat(bool bFileSave, std::string FilePath, std::string Activity);
 	void DownloadWakatimeCli(std::string CliPath);
 	void HandleStartupApiCheck(std::string ConfigFileDir);
 	void AssignGlobalVariables();
@@ -31,12 +33,12 @@ public:
 	TSharedPtr<FUICommandList> PluginCommands;
 };
 
-class WakaCommands : public TCommands<WakaCommands>
+class FWakaCommands : public TCommands<FWakaCommands>
 {
 public:
 
-	WakaCommands()
-		: TCommands<WakaCommands>
+	FWakaCommands()
+		: TCommands<FWakaCommands>
 		(
 			TEXT("WakatimeEditor"),
 			NSLOCTEXT("Wakatime", "WakatimeEditor", "Wakatime Plugin"),
