@@ -12,4 +12,11 @@ public:
 	/// <returns> true if file or directory exists, false otherwise </returns>
 	/// <remarks> According to StackOverflow - PherricOxide, this is the fastest method to check </remarks>
 	static bool PathExists(const std::string& Path);
+
+	/// <summary>
+	///	Runs a command using an exe file
+	/// </summary>
+	static bool RunCommand(std::string CommandToRun, bool bRequireNonZeroProcess,
+				std::string ExeToRun, int WaitMs, bool bRunPure,
+				std::string Directory);
 };

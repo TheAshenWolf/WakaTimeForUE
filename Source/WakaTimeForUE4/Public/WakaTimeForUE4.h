@@ -18,14 +18,15 @@ public:
 	void OnDeleteActorsEnd();
 	void OnAddLevelToWorld(ULevel* Level);
 	void OnPostSaveWorld(uint32 SaveFlags, UWorld* World, bool bSucces);
-	void OnPostPIEStarted(bool bIsSimulating);
-	void OnPrePIEEnded(bool bIsSimulating);
+	void OnPostPieStarted(bool bIsSimulating);
+	void OnPrePieEnded(bool bIsSimulating);
 	void OpenSettingsWindow();
 	void AddToolbarButton(FToolBarBuilder& Builder);
 	void OnBlueprintCompiled();
 	FReply SaveData();
-	void DownloadWakatimeCLI(std::string cliPath);
-	void HandleStartupApiCheck(std::string configFileDir);
+	void DownloadWakatimeCli(std::string CliPath);
+	void HandleStartupApiCheck(std::string ConfigFileDir);
+	void AssignGlobalVariables();
 
 	TSharedPtr<FUICommandList> PluginCommands;
 };

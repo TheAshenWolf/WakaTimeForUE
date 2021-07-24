@@ -1,4 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
+// ReSharper disable CppParameterMayBeConst
+// ReSharper disable CppLocalVariableMayBeConst
 #include "WakaTimeForUE4.h"
 
 #include "Framework/Application/SlateApplication.h"
@@ -7,7 +9,6 @@
 #include "GeneralProjectSettings.h"
 #include "LevelEditor.h"
 #include "Editor.h"
-
 #include "Windows/AllowWindowsPlatformTypes.h"
 #include <Windows.h>
 #include <iostream>
@@ -24,20 +25,16 @@
 #include "WakaTimeHelpers.h"
 
 using namespace std;
-using namespace EAppMsgType;
 
 #define LOCTEXT_NAMESPACE "FWakaTimeForUE4Module"
 
-bool isGEditorLinked(false);
-std::string apiKey("");
-
-string baseCommand("");
-
-const char* homedrive = getenv("HOMEDRIVE");
-const char* homepath = getenv("HOMEPATH");
+string GAPIKey("");
+string GBaseCommand("");
+char* GHomedrive;
+char* GHomepath;
 WCHAR BufferW[256];
 string WakatimeArchitecture = GetSystemWow64DirectoryW(BufferW, 256) == 0 ? "386" : "amd64";
-string wakaCliVersion = "wakatime-cli-windows-" + WakatimeArchitecture + ".exe";
+string GWakaCliVersion = "wakatime-cli-windows-" + WakatimeArchitecture + ".exe";
 
 // Handles
 FDelegateHandle NewActorsDroppedHandle;
@@ -45,17 +42,17 @@ FDelegateHandle DeleteActorsEndHandle;
 FDelegateHandle DuplicateActorsEndHandle;
 FDelegateHandle AddLevelToWorldHandle;
 FDelegateHandle PostSaveWorldHandle;
-FDelegateHandle PostPIEStartedHandle;
-FDelegateHandle PrePIEEndedHandle;
+FDelegateHandle GPostPieStartedHandle;
+FDelegateHandle GPrePieEndedHandle;
 FDelegateHandle BlueprintCompiledHandle;
 
 // UI Elements
-TSharedRef<SEditableTextBox> apiKeyBlock = SNew(SEditableTextBox)
-.Text(FText::FromString(FString(UTF8_TO_TCHAR(apiKey.c_str())))).MinDesiredWidth(500);
+TSharedRef<SEditableTextBox> GAPIKeyBlock = SNew(SEditableTextBox)
+.Text(FText::FromString(FString(UTF8_TO_TCHAR(GAPIKey.c_str())))).MinDesiredWidth(500);
 
 TSharedRef<SWindow> SettingsWindow = SNew(SWindow);
 
-TSharedPtr<FSlateStyleSet> StyleSetInstance = NULL;
+TSharedPtr<FSlateStyleSet> StyleSetInstance = nullptr;
 
 
 void WakaCommands::RegisterCommands()
@@ -68,62 +65,58 @@ FReply FWakaTimeForUE4Module::SaveData()
 {
 	UE_LOG(LogTemp, Warning, TEXT("WakaTime: Saving settings"));
 
-	std::string apiKeyBase = TCHAR_TO_UTF8(*(apiKeyBlock.Get().GetText().ToString()));
-	apiKey = apiKeyBase.substr(apiKeyBase.find(" = ") + 1);
+	string APIKeyBase = TCHAR_TO_UTF8(*(GAPIKeyBlock.Get().GetText().ToString()));
+	GAPIKey = APIKeyBase.substr(APIKeyBase.find(" = ") + 1);
 
-	const char* homedrive = getenv("HOMEDRIVE");
-	const char* homepath = getenv("HOMEPATH");
+	string ConfigFileDir = string(GHomedrive) + GHomepath + "/.wakatime.cfg";
+	fstream ConfigFile(ConfigFileDir);
 
-	std::string configFileDir = std::string(homedrive) + homepath + "/.wakatime.cfg";
-	std::fstream configFile(configFileDir);
-
-	if (!FWakaTimeHelpers::PathExists(configFileDir) || configFile.fail())
+	if (!FWakaTimeHelpers::PathExists(ConfigFileDir) || ConfigFile.fail())
 	{
-		configFile.open(configFileDir, std::fstream::out);
+		ConfigFile.open(ConfigFileDir, fstream::out);
 		// Pozitrone(Create the file if it does not exist) and write the data in it
-		configFile << "[settings]" << '\n';
-		configFile << "api_key = " << apiKey;
-		configFile.close();
+		ConfigFile << "[settings]" << '\n';
+		ConfigFile << "api_key = " << GAPIKey;
+		ConfigFile.close();
 
 		SettingsWindow.Get().RequestDestroyWindow();
 		return FReply::Handled();
 	}
 
-	TArray<string> data;
-	std::string tempLine;
-	bool foundKey = false;
-	while (std::getline(configFile, tempLine))
+	TArray<string> Data;
+	string TempLine;
+	bool bFoundKey = false;
+	while (getline(ConfigFile, TempLine))
 	{
-		if (tempLine.find("api_key") != std::string::npos)
+		if (TempLine.find("api_key") != string::npos)
 		{
-			data.Add("api_key = " + apiKey); // if key was found, add the rewritten value to the data set
-			foundKey = true;
+			Data.Add("api_key = " + GAPIKey); // if key was found, add the rewritten value to the data set
+			bFoundKey = true;
 		}
 		else
 		{
-			data.Add(tempLine); // If key was not found, add the according line to the data set
+			Data.Add(TempLine); // If key was not found, add the according line to the data set
 		}
 	}
-	configFile.close();
+	ConfigFile.close();
 
-	if (!foundKey)
+	if (!bFoundKey)
 	{
 		// There is no key present, add it
-		configFile.open(configFileDir, std::fstream::out);
-		configFile << "[settings]" << '\n';
-		configFile << "api_key = " << apiKey;
-		configFile.close();
+		ConfigFile.open(ConfigFileDir, fstream::out);
+		ConfigFile << "[settings]" << '\n';
+		ConfigFile << "api_key = " << GAPIKey;
+		ConfigFile.close();
 	}
 	else
 	{
 		// Rewrite the file with the new override
-		configFile.open(configFileDir, std::fstream::out);
-		int index;
-		for (index = 0; index < (int)data.Num(); index++)
+		ConfigFile.open(ConfigFileDir, fstream::out);
+		for (int Index = 0; Index < Data.Num(); Index++)
 		{
-			configFile << data[index] << endl;
+			ConfigFile << Data[Index] << endl;
 		}
-		configFile.close();
+		ConfigFile.close();
 	}
 
 	SettingsWindow.Get().RequestDestroyWindow();
@@ -132,131 +125,79 @@ FReply FWakaTimeForUE4Module::SaveData()
 
 string GetProjectName()
 {
-	const TCHAR* projectName = FApp::GetProjectName();
-	std::string mainModuleName = TCHAR_TO_UTF8(projectName);
+	const TCHAR* ProjectName = FApp::GetProjectName();
+	string MainModuleName = TCHAR_TO_UTF8(ProjectName);
 	const UGeneralProjectSettings& ProjectSettings = *GetDefault<UGeneralProjectSettings>();
 	if (ProjectSettings.ProjectName != "")
 	{
 		return TCHAR_TO_UTF8(*(ProjectSettings.ProjectName));
 	}
-	else if (mainModuleName != "")
+
+	if (MainModuleName != "")
 	{
-		return TCHAR_TO_UTF8(projectName);
+		return TCHAR_TO_UTF8(ProjectName);
 	}
 
 	return "Unreal Engine 4";
 }
 
-bool RunCommand(string commandToRun, bool requireNonZeroProcess = false,
-                string exeToRun = "C:\\Windows\\System32\\cmd.exe", int waitMs = 0, bool runPure = false,
-                string directory = "")
+bool RunPowershellCommand(string CommandToRun, bool bRequireNonZeroProcess = false, int WaitMs = 0,
+                          bool bRunPure = false,
+                          string Directory = "")
 {
-	if (runPure)
-	{
-		commandToRun = " " + commandToRun;
-	}
-	else
-	{
-		commandToRun = " /c start /b " + commandToRun;
-	}
-
-	UE_LOG(LogTemp, Warning, TEXT("Running command: %s"), *FString(UTF8_TO_TCHAR(commandToRun.c_str())));
-
-	STARTUPINFO si;
-	PROCESS_INFORMATION pi;
-
-	ZeroMemory(&si, sizeof(si));
-	si.cb = sizeof(si);
-	ZeroMemory(&pi, sizeof(pi));
-
-	bool success = CreateProcess(*FString(UTF8_TO_TCHAR(exeToRun.c_str())), // use cmd or powershell
-	                             UTF8_TO_TCHAR(commandToRun.c_str()), // the command
-	                             nullptr, // Process handle not inheritable
-	                             nullptr, // Thread handle not inheritable
-	                             FALSE, // Set handle inheritance to FALSE
-	                             CREATE_NO_WINDOW, // Don't open the console window
-	                             nullptr, // Use parent's environment block
-	                             directory == "" ? nullptr : *FString(UTF8_TO_TCHAR(directory.c_str())),
-	                             // Use parent's starting directory 
-	                             &si, // Pointer to STARTUPINFO structure
-	                             &pi); // Pointer to PROCESS_INFORMATION structure
-
-	// Close process and thread handles.
-	bool returnValue;
-
-	if (requireNonZeroProcess)
-	{
-		DWORD ec;
-		GetExitCodeProcess(pi.hProcess, &ec);
-		returnValue = (ec == 0);
-	}
-	else
-	{
-		returnValue = true;
-	}
-
-	WaitForSingleObject(pi.hProcess, waitMs);
-
-	CloseHandle(pi.hThread);
-	CloseHandle(pi.hProcess);
-
-	return success && returnValue;
+	return FWakaTimeHelpers::RunCommand(CommandToRun, bRequireNonZeroProcess,
+	                                    "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", WaitMs,
+	                                    bRunPure, Directory);
 }
 
-bool RunPowershellCommand(string commandToRun, bool requireNonZeroProcess = false, int waitMs = 0, bool runPure = false,
-                          string directory = "")
+bool RunCmdCommand(string CommandToRun, bool bRequireNonZeroProcess = false, int WaitMs = 0, bool bRunPure = false,
+                   string Directory = "")
 {
-	return RunCommand(commandToRun, requireNonZeroProcess,
-	                  "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", waitMs, runPure, directory);
+	return FWakaTimeHelpers::RunCommand(CommandToRun, bRequireNonZeroProcess, "C:\\Windows\\System32\\cmd.exe", WaitMs,
+	                                    bRunPure,
+	                                    Directory);
 }
 
-bool RunCmdCommand(string commandToRun, bool requireNonZeroProcess = false, int waitMs = 0, bool runPure = false,
-                   string directory = "")
-{
-	return RunCommand(commandToRun, requireNonZeroProcess, "C:\\Windows\\System32\\cmd.exe", waitMs, runPure,
-	                  directory);
-}
-
-void SendHeartbeat(bool fileSave, std::string filePath, std::string activity)
+void SendHeartbeat(bool bFileSave, string FilePath, string Activity)
 {
 	UE_LOG(LogTemp, Warning, TEXT("WakaTime: Sending Heartbeat"));
 
-	string command = baseCommand;
+	string Command = GBaseCommand;
 
-	command += " --entity ";
+	Command += " --entity ";
 
-	command += " \"" + filePath + "\" ";
+	Command += " \"" + FilePath + "\" ";
 
-	if (apiKey != "")
+	if (GAPIKey != "")
 	{
-		command += "--key " + apiKey + " ";
+		Command += "--key " + GAPIKey + " ";
 	}
 
-	command += "--project \"" + GetProjectName() + "\" ";
-	command += "--entity-type \"app\" ";
-	command += "--language \"Unreal Engine\" ";
-	command += "--plugin \"unreal-wakatime/1.2.0\" ";
-	command += "--category " + activity + " ";
+	Command += "--project \"" + GetProjectName() + "\" ";
+	Command += "--entity-type \"app\" ";
+	Command += "--language \"Unreal Engine\" ";
+	Command += "--plugin \"unreal-wakatime/1.2.0\" ";
+	Command += "--category " + Activity + " ";
 
-	if (fileSave)
+	if (bFileSave)
 	{
-		command += "--write ";
+		Command += "--write ";
 	}
 
 	//UE_LOG(LogTemp, Warning, TEXT("%s"), *FString(UTF8_TO_TCHAR(command.c_str())));
-	bool success = false;
+	bool bSuccess = false;
 	try
 	{
-		success = RunCmdCommand(command, false, INFINITE, true);
+		bSuccess = RunCmdCommand(Command, false, INFINITE, true);
 	}
-	catch (int err)
+	catch (int Err)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%i"), err);
+		UE_LOG(LogTemp, Warning, TEXT("%i"), Err);
 	}
 
 	//bool success = RunCommand(command, false, baseCommand,INFINITE, true);
 
-	if (success)
+	if (bSuccess)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Heartbeat successfully sent."));
 	}
@@ -267,32 +208,36 @@ void SendHeartbeat(bool fileSave, std::string filePath, std::string activity)
 	}
 }
 
-void SendHeartbeat(bool fileSave, FString filepath, std::string activity)
+void SendHeartbeat(bool bFileSave, FString Filepath, string Activity)
 {
-	std::string path(TCHAR_TO_UTF8(*filepath));
-	SendHeartbeat(fileSave, path, activity);
+	string Path(TCHAR_TO_UTF8(*Filepath));
+	SendHeartbeat(bFileSave, Path, Activity);
 }
 
 void FWakaTimeForUE4Module::StartupModule()
 {
+	AssignGlobalVariables();
+
+
 	// testing for "wakatime-cli.exe" which is used by most IDEs
-	if (RunCmdCommand("where /r " + string(homedrive) + homepath + "\\.wakatime\\wakatime-cli\\ wakatime-cli.exe",
+	if (RunCmdCommand("where /r " + string(GHomedrive) + GHomepath + "\\.wakatime\\wakatime-cli\\ wakatime-cli.exe",
 	                  true))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Found IDE wakatime-cli"));
-		baseCommand = (string(homedrive) + homepath + "\\.wakatime\\wakatime-cli\\wakatime-cli.exe ");
+		GBaseCommand = (string(GHomedrive) + GHomepath + "\\.wakatime\\wakatime-cli\\wakatime-cli.exe ");
 	}
 	else
 	{
 		// neither way was found; download and install the new version
 		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Did not find wakatime"));
-		baseCommand = "/c start /b  " + string(homedrive) + homepath + "\\.wakatime\\wakatime-cli\\" + wakaCliVersion;
-		string folderPath = string(homedrive) + homepath + "\\.wakatime\\wakatime-cli";
-		if (!FWakaTimeHelpers::PathExists(folderPath))
+		GBaseCommand = "/c start /b  " + string(GHomedrive) + GHomepath + "\\.wakatime\\wakatime-cli\\" +
+			GWakaCliVersion;
+		string FolderPath = string(GHomedrive) + GHomepath + "\\.wakatime\\wakatime-cli";
+		if (!FWakaTimeHelpers::PathExists(FolderPath))
 		{
-			RunCmdCommand("mkdir " + folderPath, false, INFINITE);
+			RunCmdCommand("mkdir " + FolderPath, false, INFINITE);
 		}
-		DownloadWakatimeCLI(std::string(homedrive) + homepath + "/.wakatime/wakatime-cli/" + wakaCliVersion);
+		DownloadWakatimeCli(string(GHomedrive) + GHomepath + "/.wakatime/wakatime-cli/" + GWakaCliVersion);
 	}
 	// Pozitrone(Wakatime-cli.exe is not in the path by default, which is why we have to use the user path)
 
@@ -303,8 +248,8 @@ void FWakaTimeForUE4Module::StartupModule()
 		FSlateStyleRegistry::RegisterSlateStyle(*StyleSetInstance);
 	}
 
-	std::string configFileDir = std::string(homedrive) + homepath + "/.wakatime.cfg";
-	HandleStartupApiCheck(configFileDir);
+	string ConfigFileDir = string(GHomedrive) + GHomepath + "/.wakatime.cfg";
+	HandleStartupApiCheck(ConfigFileDir);
 
 	// Add Listeners
 	NewActorsDroppedHandle = FEditorDelegates::OnNewActorsDropped.AddRaw(
@@ -314,13 +259,12 @@ void FWakaTimeForUE4Module::StartupModule()
 		this, &FWakaTimeForUE4Module::OnDuplicateActorsEnd);
 	AddLevelToWorldHandle = FEditorDelegates::OnAddLevelToWorld.AddRaw(this, &FWakaTimeForUE4Module::OnAddLevelToWorld);
 	PostSaveWorldHandle = FEditorDelegates::PostSaveWorld.AddRaw(this, &FWakaTimeForUE4Module::OnPostSaveWorld);
-	PostPIEStartedHandle = FEditorDelegates::PostPIEStarted.AddRaw(this, &FWakaTimeForUE4Module::OnPostPIEStarted);
-	PrePIEEndedHandle = FEditorDelegates::PrePIEEnded.AddRaw(this, &FWakaTimeForUE4Module::OnPrePIEEnded);
+	GPostPieStartedHandle = FEditorDelegates::PostPIEStarted.AddRaw(this, &FWakaTimeForUE4Module::OnPostPieStarted);
+	GPrePieEndedHandle = FEditorDelegates::PrePIEEnded.AddRaw(this, &FWakaTimeForUE4Module::OnPrePieEnded);
 	if (GEditor)
 	{
 		BlueprintCompiledHandle = GEditor->OnBlueprintCompiled().AddRaw(
 			this, &FWakaTimeForUE4Module::OnBlueprintCompiled);
-		isGEditorLinked = true;
 	}
 	else
 	{
@@ -339,16 +283,15 @@ void FWakaTimeForUE4Module::StartupModule()
 
 	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
 
-	{
-		TSharedPtr<FExtender> NewToolbarExtender = MakeShareable(new FExtender);
 
-		NewToolbarExtender->AddToolBarExtension("Content",
-		                                        EExtensionHook::Before,
-		                                        PluginCommands,
-		                                        FToolBarExtensionDelegate::CreateRaw(
-			                                        this, &FWakaTimeForUE4Module::AddToolbarButton));
-		LevelEditorModule.GetToolBarExtensibilityManager()->AddExtender(NewToolbarExtender);
-	}
+	TSharedPtr<FExtender> NewToolbarExtender = MakeShareable(new FExtender);
+
+	NewToolbarExtender->AddToolBarExtension("Content",
+	                                        EExtensionHook::Before,
+	                                        PluginCommands,
+	                                        FToolBarExtensionDelegate::CreateRaw(
+		                                        this, &FWakaTimeForUE4Module::AddToolbarButton));
+	LevelEditorModule.GetToolBarExtensibilityManager()->AddExtender(NewToolbarExtender);
 }
 
 void FWakaTimeForUE4Module::ShutdownModule()
@@ -359,39 +302,42 @@ void FWakaTimeForUE4Module::ShutdownModule()
 	FEditorDelegates::OnDuplicateActorsEnd.Remove(DuplicateActorsEndHandle);
 	FEditorDelegates::OnAddLevelToWorld.Remove(AddLevelToWorldHandle);
 	FEditorDelegates::PostSaveWorld.Remove(PostSaveWorldHandle);
-	FEditorDelegates::PostPIEStarted.Remove(PostPIEStartedHandle);
-	FEditorDelegates::PrePIEEnded.Remove(PrePIEEndedHandle);
+	FEditorDelegates::PostPIEStarted.Remove(GPostPieStartedHandle);
+	FEditorDelegates::PrePIEEnded.Remove(GPrePieEndedHandle);
 	if (GEditor)
 	{
 		GEditor->OnBlueprintCompiled().Remove(BlueprintCompiledHandle);
 	}
+
+	free(GHomedrive);
+	free(GHomepath);
 }
 
 TSharedRef<FSlateStyleSet> FWakaTimeForUE4Module::Create()
 {
 	TSharedRef<FSlateStyleSet> Style = MakeShareable(new FSlateStyleSet("WakaTime2DStyle"));
 
-	FString engineDirectory;
+	FString EngineDirectory;
 
 	if (FPaths::DirectoryExists(FPaths::EnginePluginsDir() / "WakaTimeForUE4-main"))
 	{
-		engineDirectory = (FPaths::EnginePluginsDir() / "WakaTimeForUE4-main" / "Resources");
+		EngineDirectory = (FPaths::EnginePluginsDir() / "WakaTimeForUE4-main" / "Resources");
 		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Main detected"));
 	}
 	else if (FPaths::DirectoryExists(FPaths::EnginePluginsDir() / "WakaTimeForUE4-release"))
 	{
-		engineDirectory = (FPaths::EnginePluginsDir() / "WakaTimeForUE4-release" / "Resources");
+		EngineDirectory = (FPaths::EnginePluginsDir() / "WakaTimeForUE4-release" / "Resources");
 		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Release detected"));
 	}
 	else
 	{
-		engineDirectory = (FPaths::EnginePluginsDir() / "WakaTimeForUE4" / "Resources");
+		EngineDirectory = (FPaths::EnginePluginsDir() / "WakaTimeForUE4" / "Resources");
 		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Neither detected"));
 	}
 
 
-	Style->SetContentRoot(engineDirectory);
-	Style->Set("mainIcon", new FSlateImageBrush(engineDirectory + "/Icon128.png", FVector2D(40, 40), FSlateColor()));
+	Style->SetContentRoot(EngineDirectory);
+	Style->Set("mainIcon", new FSlateImageBrush(EngineDirectory + "/Icon128.png", FVector2D(40, 40), FSlateColor()));
 	return Style;
 }
 
@@ -420,12 +366,12 @@ void FWakaTimeForUE4Module::OnPostSaveWorld(uint32 SaveFlags, UWorld* World, boo
 	SendHeartbeat(false, GetProjectName(), "designing");
 }
 
-void FWakaTimeForUE4Module::OnPostPIEStarted(bool bIsSimulating)
+void FWakaTimeForUE4Module::OnPostPieStarted(bool bIsSimulating)
 {
 	SendHeartbeat(false, GetProjectName(), "debugging");
 }
 
-void FWakaTimeForUE4Module::OnPrePIEEnded(bool bIsSimulating)
+void FWakaTimeForUE4Module::OnPrePieEnded(bool bIsSimulating)
 {
 	SendHeartbeat(false, GetProjectName(), "debugging");
 }
@@ -461,7 +407,7 @@ void FWakaTimeForUE4Module::OpenSettingsWindow()
 			  .HAlign(HAlign_Center)
 			  .VAlign(VAlign_Center)
 			[
-				apiKeyBlock
+				GAPIKeyBlock
 			]
 		]
 		+ SVerticalBox::Slot()
@@ -493,59 +439,59 @@ void FWakaTimeForUE4Module::OpenSettingsWindow()
 
 void FWakaTimeForUE4Module::AddToolbarButton(FToolBarBuilder& Builder)
 {
-	FSlateIcon icon = FSlateIcon(TEXT("WakaTime2DStyle"), "mainIcon"); //Style.Get().GetStyleSetName(), "Icon128.png");
+	FSlateIcon Icon = FSlateIcon(TEXT("WakaTime2DStyle"), "mainIcon"); //Style.Get().GetStyleSetName(), "Icon128.png");
 
 	Builder.AddToolBarButton(WakaCommands::Get().WakaTimeSettingsCommand, NAME_None, FText::FromString("WakaTime"),
 	                         FText::FromString("WakaTime plugin settings"),
-	                         icon, NAME_None);
+	                         Icon, NAME_None);
 	//Style->Set("Niagara.CompileStatus.Warning", new IMAGE_BRUSH("Icons/CompileStatus_Warning", Icon40x40));
 }
 
 
-bool UnzipArchive(std::string zipFile, std::string savePath)
+bool UnzipArchive(string ZipFile, string SavePath)
 {
-	if (!FWakaTimeHelpers::PathExists(zipFile)) return false;
+	if (!FWakaTimeHelpers::PathExists(ZipFile)) return false;
 
-	string extractCommand = "powershell -command \"Expand-Archive -Force \"" + zipFile + "\" \"" + savePath + "\"";
-	return RunPowershellCommand(extractCommand, false, INFINITE, true);
+	string ExtractCommand = "powershell -command \"Expand-Archive -Force \"" + ZipFile + "\" \"" + SavePath + "\"";
+	return RunPowershellCommand(ExtractCommand, false, INFINITE, true);
 }
 
-bool DownloadFile(std::string url, std::string saveTo)
+bool DownloadFile(string URL, string SaveTo)
 {
-	string downloadCommand = "powershell -command \"(new-object System.Net.WebClient).DownloadFile('" + url + "','" +
-		saveTo + "')\"";
+	string DownloadCommand = "powershell -command \"(new-object System.Net.WebClient).DownloadFile('" + URL + "','" +
+		SaveTo + "')\"";
 
-	UE_LOG(LogTemp, Warning, TEXT("%s"), *FString(UTF8_TO_TCHAR(downloadCommand.c_str())));
-	return RunPowershellCommand(downloadCommand, false, INFINITE, true);
+	UE_LOG(LogTemp, Warning, TEXT("%s"), *FString(UTF8_TO_TCHAR(DownloadCommand.c_str())));
+	return RunPowershellCommand(DownloadCommand, false, INFINITE, true);
 }
 
-void FWakaTimeForUE4Module::DownloadWakatimeCLI(std::string cliPath)
+void FWakaTimeForUE4Module::DownloadWakatimeCli(string CliPath)
 {
-	if (FWakaTimeHelpers::PathExists(cliPath))
+	if (FWakaTimeHelpers::PathExists(CliPath))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("WakaTime: CLI found"));
 		return; // if CLI exists, no need to change anything
 	}
 	UE_LOG(LogTemp, Warning, TEXT("WakaTime: CLI not found, attempting download."));
 
-	string url = "https://github.com/wakatime/wakatime-cli/releases/download/v1.18.9/wakatime-cli-windows-" +
+	string URL = "https://github.com/wakatime/wakatime-cli/releases/download/v1.18.9/wakatime-cli-windows-" +
 		WakatimeArchitecture + ".zip";
 
-	string localZipFilePath = std::string(homedrive) + homepath + "/.wakatime/" + "wakatime-cli.zip";
+	string LocalZipFilePath = string(GHomedrive) + GHomepath + "/.wakatime/" + "wakatime-cli.zip";
 
-	bool successDownload = DownloadFile(url, localZipFilePath);
+	bool bSuccessDownload = DownloadFile(URL, LocalZipFilePath);
 
-	if (successDownload)
+	if (bSuccessDownload)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Successfully downloaded wakatime-cli.zip"));
-		bool successUnzip = UnzipArchive(localZipFilePath,
-		                                 std::string(homedrive) + homepath + "/.wakatime/wakatime-cli");
+		bool bSuccessUnzip = UnzipArchive(LocalZipFilePath,
+		                                 string(GHomedrive) + GHomepath + "/.wakatime/wakatime-cli");
 
 		//string pathBase = string(homedrive) + homepath + "\\.wakatime";
 
 		//bool successMove = RunCmdCommand("ren " + pathBase + "\\wakatime-master wakatime-cli", false,  INFINITE);
 
-		if (successUnzip /*&& successMove*/) UE_LOG(LogTemp, Warning,
+		if (bSuccessUnzip /*&& successMove*/) UE_LOG(LogTemp, Warning,
 		                                            TEXT("WakaTime: Successfully extracted wakatime-cli."));
 		//DownloadPython();
 	}
@@ -555,36 +501,49 @@ void FWakaTimeForUE4Module::DownloadWakatimeCLI(std::string cliPath)
 	}
 }
 
-void FWakaTimeForUE4Module::HandleStartupApiCheck(std::string configFileDir)
+void FWakaTimeForUE4Module::HandleStartupApiCheck(string ConfigFileDir)
 {
-	std::string line;
-	bool foundApiKey = false;
+	string Line;
+	bool bFoundApiKey = false;
 
-	if (!FWakaTimeHelpers::PathExists(configFileDir))
+	if (!FWakaTimeHelpers::PathExists(ConfigFileDir))
 		// if there is no .wakatime.cfg, open the settings window straight up
 	{
 		OpenSettingsWindow();
 		return;
 	}
 
-	std::fstream configFile(configFileDir);
+	fstream ConfigFile(ConfigFileDir);
 
-	while (std::getline(configFile, line))
+	while (getline(ConfigFile, Line))
 	{
-		if (line.find("api_key") != std::string::npos)
+		if (Line.find("api_key") != string::npos)
 		{
-			apiKey = line.substr(line.find(" = ") + 3); // Pozitrone(Extract only the api key from the line);
-			apiKeyBlock.Get().SetText(FText::FromString(FString(UTF8_TO_TCHAR(apiKey.c_str()))));
-			configFile.close();
-			foundApiKey = true;
+			GAPIKey = Line.substr(Line.find(" = ") + 3); // Pozitrone(Extract only the api key from the line);
+			GAPIKeyBlock.Get().SetText(FText::FromString(FString(UTF8_TO_TCHAR(GAPIKey.c_str()))));
+			ConfigFile.close();
+			bFoundApiKey = true;
 		}
 	}
 
-	if (!foundApiKey)
+	if (!bFoundApiKey)
 	{
 		OpenSettingsWindow(); // if key was not found, open the settings
 	}
 }
+
+void FWakaTimeForUE4Module::AssignGlobalVariables()
+{
+	// use _dupenv_s instead of getenv, as it is safer
+	GHomedrive = nullptr;
+	size_t LenDrive = NULL;
+	_dupenv_s(&GHomedrive, &LenDrive, "HOMEDRIVE");
+
+	GHomepath = nullptr;
+	size_t LenPath = NULL;
+	_dupenv_s(&GHomepath, &LenPath, "HOMEPATH");
+}
+
 
 #undef LOCTEXT_NAMESPACE
 
