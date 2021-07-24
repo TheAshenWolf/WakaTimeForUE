@@ -10,14 +10,14 @@
 	"DocsURL": "https://github.com/Pozitrone/WakaTimeForUE4",
 	"MarketplaceURL": "",
 	"SupportURL": "https://github.com/Pozitrone/WakaTimeForUE4/issues",
-	"CanContainContent": true,
+	"CanContainContent": false,
 	"IsBetaVersion": true,
 	"IsExperimentalVersion": false,
 	"Installed": false,
 	"Modules": [
 		{
 			"Name": "WakaTimeForUE4",
-			"Type": "Editor",
+			"Type": "EditorNoCommandlet",
 			"LoadingPhase": "PostEngineInit"
 		}
 	]

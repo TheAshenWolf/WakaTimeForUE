@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include <string>
 #include <Runtime/SlateCore/Public/Styling/SlateStyle.h>
 
