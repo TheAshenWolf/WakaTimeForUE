@@ -28,7 +28,7 @@ A: There is a WakaTime icon in the main toolbar. When you click this icon, you c
 
 ---
 ## Contributors
-For some reason, GitHub is not showing contributors properly, so I added this section.
+I'd like to thank all of these people for what they did. They helped me to get this plugin to the stage where it is right now.
 
 <a href="https://github.com/ghost">
     <img src="https://github.com/ghost.png" width="64" height="64" alt="ghost" title="A person who helped us solve many warnings regarding macros.">
