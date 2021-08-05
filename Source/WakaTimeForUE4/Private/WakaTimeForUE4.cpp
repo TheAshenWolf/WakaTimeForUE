@@ -481,7 +481,7 @@ void FWakaTimeForUE4Module::OnAddLevelToWorld(ULevel* Level)
 
 void FWakaTimeForUE4Module::OnPostSaveWorld(uint32 SaveFlags, UWorld* World, bool bSucces)
 {
-	SendHeartbeat(false, GetProjectName(), "designing");
+	SendHeartbeat(true, GetProjectName(), "designing");
 }
 
 void FWakaTimeForUE4Module::OnPostPieStarted(bool bIsSimulating)
@@ -491,12 +491,12 @@ void FWakaTimeForUE4Module::OnPostPieStarted(bool bIsSimulating)
 
 void FWakaTimeForUE4Module::OnPrePieEnded(bool bIsSimulating)
 {
-	SendHeartbeat(false, GetProjectName(), "debugging");
+	SendHeartbeat(true, GetProjectName(), "debugging");
 }
 
 void FWakaTimeForUE4Module::OnBlueprintCompiled()
 {
-	SendHeartbeat(false, GetProjectName(), "coding");
+	SendHeartbeat(true, GetProjectName(), "coding");
 }
 
 
