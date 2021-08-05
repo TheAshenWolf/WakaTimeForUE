@@ -6,7 +6,7 @@
 
 ### Setting up the plugin
 1. Download WakatimeForUE4.zip from the releases
-2. Extract the plugin into your editor plugins folder (Commonly C:\Program Files\Epic Games\UE_4.xx\Engine\Plugins)
+2. Extract the plugin into your editor plugins folder (Commonly C:\Program Files\Epic Games\UE_4.xx\Engine\Plugins)  
    2.1. Your folder structure should be ...\Engine\Plugins\WakaTimeForUE4\
    2.2. Within this folder resides WakaTimeForUE4.uplugin and other files
 3. Run the engine
