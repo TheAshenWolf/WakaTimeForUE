@@ -19,8 +19,7 @@ using namespace std;
 // Global variables
 string GAPIKey("");
 string GBaseCommand("");
-char* GHomedrive;
-char* GHomepath;
+char* GUserProfile;
 string GWakatimeArchitecture;
 string GWakaCliVersion;
 
@@ -50,24 +49,24 @@ void FWakaTimeForUE4Module::StartupModule()
 
 	// testing for "wakatime-cli.exe" which is used by most IDEs
 	if (FWakaTimeHelpers::RunCmdCommand(
-		"where /r " + string(GHomedrive) + GHomepath + "\\.wakatime\\wakatime-cli\\ wakatime-cli.exe",
+		"where /r " + string(GUserProfile) + "\\.wakatime\\" + GWakaCliVersion,
 		true))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Found IDE wakatime-cli"));
-		GBaseCommand = (string(GHomedrive) + GHomepath + "\\.wakatime\\wakatime-cli\\wakatime-cli.exe ");
+		GBaseCommand = (string(GUserProfile) + "\\.wakatime\\" + GWakaCliVersion);
 	}
 	else
 	{
 		// neither way was found; download and install the new version
 		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Did not find wakatime"));
-		GBaseCommand = "/c start /b  " + string(GHomedrive) + GHomepath + "\\.wakatime\\wakatime-cli\\" +
+		GBaseCommand = "/c start /b  " + string(GUserProfile) + "\\.wakatime\\" +
 			GWakaCliVersion;
-		string FolderPath = string(GHomedrive) + GHomepath + "\\.wakatime\\wakatime-cli";
+		string FolderPath = string(GUserProfile) + "\\.wakatime";
 		if (!FWakaTimeHelpers::PathExists(FolderPath))
 		{
 			FWakaTimeHelpers::RunCmdCommand("mkdir " + FolderPath, false, INFINITE);
 		}
-		DownloadWakatimeCli(string(GHomedrive) + GHomepath + "/.wakatime/wakatime-cli/" + GWakaCliVersion);
+		DownloadWakatimeCli(string(GUserProfile) + "/.wakatime/wakatime-cli/" + GWakaCliVersion);
 	}
 	// Pozitrone(Wakatime-cli.exe is not in the path by default, which is why we have to use the user path)
 
@@ -78,7 +77,7 @@ void FWakaTimeForUE4Module::StartupModule()
 		FSlateStyleRegistry::RegisterSlateStyle(*StyleSetInstance);
 	}
 
-	string ConfigFileDir = string(GHomedrive) + GHomepath + "/.wakatime.cfg";
+	string ConfigFileDir = string(GUserProfile) + "/.wakatime.cfg";
 	HandleStartupApiCheck(ConfigFileDir);
 
 	// Add Listeners
@@ -139,8 +138,7 @@ void FWakaTimeForUE4Module::ShutdownModule()
 		GEditor->OnBlueprintCompiled().Remove(BlueprintCompiledHandle);
 	}
 
-	free(GHomedrive);
-	free(GHomepath);
+	free(GUserProfile);
 }
 
 void FWakaCommands::RegisterCommands()
@@ -155,14 +153,10 @@ void FWakaCommands::RegisterCommands()
 void FWakaTimeForUE4Module::AssignGlobalVariables()
 {
 	// use _dupenv_s instead of getenv, as it is safer
-	GHomedrive = nullptr;
+	GUserProfile = "c:";
 	size_t LenDrive = NULL;
-	_dupenv_s(&GHomedrive, &LenDrive, "HOMEDRIVE");
-
-	GHomepath = nullptr;
-	size_t LenPath = NULL;
-	_dupenv_s(&GHomepath, &LenPath, "HOMEPATH");
-
+	_dupenv_s(&GUserProfile, &LenDrive, "USERPROFILE");
+	
 	WCHAR BufferW[256];
 	GWakatimeArchitecture = GetSystemWow64DirectoryW(BufferW, 256) == 0 ? "386" : "amd64";
 	GWakaCliVersion = "wakatime-cli-windows-" + GWakatimeArchitecture + ".exe";
@@ -212,7 +206,7 @@ void FWakaTimeForUE4Module::DownloadWakatimeCli(string CliPath)
 	string URL = "https://github.com/wakatime/wakatime-cli/releases/download/v1.18.9/wakatime-cli-windows-" +
 		GWakatimeArchitecture + ".zip";
 
-	string LocalZipFilePath = string(GHomedrive) + GHomepath + "/.wakatime/" + "wakatime-cli.zip";
+	string LocalZipFilePath = string(GUserProfile) + "/.wakatime/" + "wakatime-cli.zip";
 
 	bool bSuccessDownload = FWakaTimeHelpers::DownloadFile(URL, LocalZipFilePath);
 
@@ -220,7 +214,7 @@ void FWakaTimeForUE4Module::DownloadWakatimeCli(string CliPath)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Successfully downloaded wakatime-cli.zip"));
 		bool bSuccessUnzip = FWakaTimeHelpers::UnzipArchive(LocalZipFilePath,
-		                                                    string(GHomedrive) + GHomepath + "/.wakatime/wakatime-cli");
+		                                                    string(GUserProfile) + "/.wakatime");
 
 		if (bSuccessUnzip) UE_LOG(LogTemp, Warning, TEXT("WakaTime: Successfully extracted wakatime-cli."));
 	}
@@ -350,7 +344,7 @@ FReply FWakaTimeForUE4Module::SaveData()
 	string APIKeyBase = TCHAR_TO_UTF8(*(GAPIKeyBlock.Get().GetText().ToString()));
 	GAPIKey = APIKeyBase.substr(APIKeyBase.find(" = ") + 1);
 
-	string ConfigFileDir = string(GHomedrive) + GHomepath + "/.wakatime.cfg";
+	string ConfigFileDir = string(GUserProfile) + "/.wakatime.cfg";
 	fstream ConfigFile(ConfigFileDir);
 
 	if (!FWakaTimeHelpers::PathExists(ConfigFileDir) || ConfigFile.fail())
