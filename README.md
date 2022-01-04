@@ -1,6 +1,6 @@
 # WakaTimeForUE4
 
-![plugin version](https://img.shields.io/badge/version-1.2.0-blue) ![Unreal Engine version](https://img.shields.io/badge/Unreal%20Engine%20version-4.26-blue) ![Platform support](https://img.shields.io/badge/Platform_support-Windows-blue)
+![plugin version](https://img.shields.io/badge/version-1.2.1-blue) ![Unreal Engine version](https://img.shields.io/badge/Unreal%20Engine%20version-4.26-blue) ![Platform support](https://img.shields.io/badge/Platform_support-Windows-blue)
 
 ---
 
@@ -36,5 +36,9 @@ I'd like to thank all of these people for what they did. They helped me to get t
 
 <a href="https://github.com/simonSlamka">
     <img src="https://github.com/simonSlamka.png" width="64" height="64" alt="simonSlamka" title="simonSlamka - Helped me and motivated me to finish the version 1.2.0">
+</a>
+
+<a href="https://github.com/Coolicky">
+    <img src="https://github.com/Coolicky.png" width="64" height="64" alt="Coolicky" title="Coolicky - Updated env variables for better compatibility with different permissions and improved compatibility with other wakatime plugins">
 </a>
 
