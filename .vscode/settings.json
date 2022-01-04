@@ -1,5 +1,6 @@
 {
     "files.associations": {
+        "*.ejs": "html",
         "array": "cpp",
         "*.tcc": "cpp",
         "cctype": "cpp",
@@ -30,6 +31,7 @@
         "system_error": "cpp",
         "type_traits": "cpp",
         "typeinfo": "cpp",
-        "utility": "cpp"
+        "utility": "cpp",
+        "xstring": "cpp"
     }
 }
