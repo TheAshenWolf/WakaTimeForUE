@@ -421,7 +421,7 @@ void FWakaTimeForUE4Module::SendHeartbeat(bool bFileSave, string FilePath, strin
 	Command += "--project \"" + GetProjectName() + "\" ";
 	Command += "--entity-type \"app\" ";
 	Command += "--language \"Unreal Engine\" ";
-	Command += "--plugin \"unreal-wakatime/1.2.0\" ";
+	Command += "--plugin \"unreal-wakatime/1.2.2\" ";
 	Command += "--category " + Activity + " ";
 
 	if (bFileSave)
