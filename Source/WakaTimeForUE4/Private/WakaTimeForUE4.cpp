@@ -157,7 +157,12 @@ void FWakaTimeForUE4Module::AssignGlobalVariables()
 	size_t LenDrive = NULL;
 	_dupenv_s(&GUserProfile, &LenDrive, "USERPROFILE");
 	
-	GUserProfile = (string("\"" + &GUserProfile + "\"")).c_str();
+	string profile = GUserProfile;
+	profile.insert(0, 1, '"');
+	profile.append("\"");
+	
+	const char* tmp = profile.c_str();
+	GUserProfile = (char*)tmp;
 	
 	WCHAR BufferW[256];
 	GWakatimeArchitecture = GetSystemWow64DirectoryW(BufferW, 256) == 0 ? "386" : "amd64";
