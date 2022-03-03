@@ -59,8 +59,8 @@ void FWakaTimeForUE4Module::StartupModule()
 	{
 		// neither way was found; download and install the new version
 		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Did not find wakatime"));
-		GBaseCommand = "/c start /b  " + string(GUserProfile) + "\\.wakatime\\" +
-			GWakaCliVersion;
+		GBaseCommand = "/c start \"\" /b \"" + string(GUserProfile) + "\\.wakatime\\" +
+			GWakaCliVersion + "\"";
 		string FolderPath = string(GUserProfile) + "\\.wakatime";
 		if (!FWakaTimeHelpers::PathExists(FolderPath))
 		{
@@ -68,7 +68,7 @@ void FWakaTimeForUE4Module::StartupModule()
 		}
 		DownloadWakatimeCli(string(GUserProfile) + "/.wakatime/wakatime-cli/" + GWakaCliVersion);
 	}
-	// Pozitrone(Wakatime-cli.exe is not in the path by default, which is why we have to use the user path)
+	// TheAshenWolf(Wakatime-cli.exe is not in the path by default, which is why we have to use the user path)
 
 
 	if (!StyleSetInstance.IsValid())
@@ -156,6 +156,13 @@ void FWakaTimeForUE4Module::AssignGlobalVariables()
 	GUserProfile = "c:";
 	size_t LenDrive = NULL;
 	_dupenv_s(&GUserProfile, &LenDrive, "USERPROFILE");
+	
+	/*string profile = GUserProfile;
+	profile.insert(0, 1, '"');
+	profile.append("\"");
+	
+	const char* tmp = profile.c_str();
+	GUserProfile = (char*)tmp;*/
 	
 	WCHAR BufferW[256];
 	GWakatimeArchitecture = GetSystemWow64DirectoryW(BufferW, 256) == 0 ? "386" : "amd64";
@@ -407,9 +414,7 @@ void FWakaTimeForUE4Module::SendHeartbeat(bool bFileSave, string FilePath, strin
 
 	string Command = GBaseCommand;
 
-	Command += " --entity ";
-
-	Command += " \"" + FilePath + "\" ";
+	Command += " --entity \"" + GetProjectName() + "\" ";
 
 	if (GAPIKey != "")
 	{
@@ -419,12 +424,12 @@ void FWakaTimeForUE4Module::SendHeartbeat(bool bFileSave, string FilePath, strin
 	Command += "--project \"" + GetProjectName() + "\" ";
 	Command += "--entity-type \"app\" ";
 	Command += "--language \"Unreal Engine\" ";
-	Command += "--plugin \"unreal-wakatime/1.2.0\" ";
+	Command += "--plugin \"unreal-wakatime/1.2.2\" ";
 	Command += "--category " + Activity + " ";
 
 	if (bFileSave)
 	{
-		Command += "--write ";
+		Command += "--write";
 	}
 
 	//UE_LOG(LogTemp, Warning, TEXT("%s"), *FString(UTF8_TO_TCHAR(command.c_str())));
