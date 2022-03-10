@@ -1,7 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 // ReSharper disable CppParameterMayBeConst
 // ReSharper disable CppLocalVariableMayBeConst
-#include "WakaTimeForUE4.h"
+#include "WakaTimeForUE.h"
 
 #include "Windows/AllowWindowsPlatformTypes.h"
 #include "GeneralProjectSettings.h"
@@ -12,9 +12,12 @@
 #include <activation.h>
 #include <fstream>
 
+#include "Interfaces/IPluginManager.h"
+#include "UObject/ObjectSaveContext.h"
+
 using namespace std;
 
-#define LOCTEXT_NAMESPACE "FWakaTimeForUE4Module"
+#define LOCTEXT_NAMESPACE "FWakaTimeForUEModule"
 
 // Global variables
 string GAPIKey("");
@@ -42,7 +45,7 @@ TSharedPtr<FSlateStyleSet> StyleSetInstance = nullptr;
 
 // Module methods
 
-void FWakaTimeForUE4Module::StartupModule()
+void FWakaTimeForUEModule::StartupModule()
 {
 	AssignGlobalVariables();
 
@@ -82,18 +85,27 @@ void FWakaTimeForUE4Module::StartupModule()
 
 	// Add Listeners
 	NewActorsDroppedHandle = FEditorDelegates::OnNewActorsDropped.AddRaw(
-		this, &FWakaTimeForUE4Module::OnNewActorDropped);
-	DeleteActorsEndHandle = FEditorDelegates::OnDeleteActorsEnd.AddRaw(this, &FWakaTimeForUE4Module::OnDeleteActorsEnd);
+		this, &FWakaTimeForUEModule::OnNewActorDropped);
+	DeleteActorsEndHandle = FEditorDelegates::OnDeleteActorsEnd.AddRaw(this, &FWakaTimeForUEModule::OnDeleteActorsEnd);
 	DuplicateActorsEndHandle = FEditorDelegates::OnDuplicateActorsEnd.AddRaw(
-		this, &FWakaTimeForUE4Module::OnDuplicateActorsEnd);
-	AddLevelToWorldHandle = FEditorDelegates::OnAddLevelToWorld.AddRaw(this, &FWakaTimeForUE4Module::OnAddLevelToWorld);
-	PostSaveWorldHandle = FEditorDelegates::PostSaveWorld.AddRaw(this, &FWakaTimeForUE4Module::OnPostSaveWorld);
-	GPostPieStartedHandle = FEditorDelegates::PostPIEStarted.AddRaw(this, &FWakaTimeForUE4Module::OnPostPieStarted);
-	GPrePieEndedHandle = FEditorDelegates::PrePIEEnded.AddRaw(this, &FWakaTimeForUE4Module::OnPrePieEnded);
+		this, &FWakaTimeForUEModule::OnDuplicateActorsEnd);
+	AddLevelToWorldHandle = FEditorDelegates::OnAddLevelToWorld.AddRaw(this, &FWakaTimeForUEModule::OnAddLevelToWorld);
+
+#if ENGINE_MAJOR_VERSION == 5
+	PostSaveWorldHandle = FEditorDelegates::PostSaveWorldWithContext.AddRaw(this, &FWakaTimeForUEModule::OnPostSaveWorld);
+#else
+	PostSaveWorldHandle = FEditorDelegates::PostSaveWorld.AddRaw(this, &FWakaTimeForUEModule::OnPostSaveWorld);
+#endif
+
+
+	
+	
+	GPostPieStartedHandle = FEditorDelegates::PostPIEStarted.AddRaw(this, &FWakaTimeForUEModule::OnPostPieStarted);
+	GPrePieEndedHandle = FEditorDelegates::PrePIEEnded.AddRaw(this, &FWakaTimeForUEModule::OnPrePieEnded);
 	if (GEditor)
 	{
 		BlueprintCompiledHandle = GEditor->OnBlueprintCompiled().AddRaw(
-			this, &FWakaTimeForUE4Module::OnBlueprintCompiled);
+			this, &FWakaTimeForUEModule::OnBlueprintCompiled);
 	}
 	else
 	{
@@ -107,7 +119,7 @@ void FWakaTimeForUE4Module::StartupModule()
 	// This handles the WakaTime settings button in the top bar
 	PluginCommands->MapAction(
 		FWakaCommands::Get().WakaTimeSettingsCommand,
-		FExecuteAction::CreateRaw(this, &FWakaTimeForUE4Module::OpenSettingsWindow)
+		FExecuteAction::CreateRaw(this, &FWakaTimeForUEModule::OpenSettingsWindow)
 	);
 
 	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
@@ -119,11 +131,11 @@ void FWakaTimeForUE4Module::StartupModule()
 	                                        EExtensionHook::Before,
 	                                        PluginCommands,
 	                                        FToolBarExtensionDelegate::CreateRaw(
-		                                        this, &FWakaTimeForUE4Module::AddToolbarButton));
+		                                        this, &FWakaTimeForUEModule::AddToolbarButton));
 	LevelEditorModule.GetToolBarExtensibilityManager()->AddExtender(NewToolbarExtender);
 }
 
-void FWakaTimeForUE4Module::ShutdownModule()
+void FWakaTimeForUEModule::ShutdownModule()
 {
 	// Removing event handles
 	FEditorDelegates::OnNewActorsDropped.Remove(NewActorsDroppedHandle);
@@ -150,32 +162,32 @@ void FWakaCommands::RegisterCommands()
 
 // Initialization methods
 
-void FWakaTimeForUE4Module::AssignGlobalVariables()
+void FWakaTimeForUEModule::AssignGlobalVariables()
 {
 	// use _dupenv_s instead of getenv, as it is safer
 	GUserProfile = "c:";
 	size_t LenDrive = NULL;
 	_dupenv_s(&GUserProfile, &LenDrive, "USERPROFILE");
-	
+
 	/*string profile = GUserProfile;
 	profile.insert(0, 1, '"');
 	profile.append("\"");
 	
 	const char* tmp = profile.c_str();
 	GUserProfile = (char*)tmp;*/
-	
+
 	WCHAR BufferW[256];
 	GWakatimeArchitecture = GetSystemWow64DirectoryW(BufferW, 256) == 0 ? "386" : "amd64";
 	GWakaCliVersion = "wakatime-cli-windows-" + GWakatimeArchitecture + ".exe";
 }
 
-void FWakaTimeForUE4Module::HandleStartupApiCheck(string ConfigFilePath)
+void FWakaTimeForUEModule::HandleStartupApiCheck(string ConfigFilePath)
 {
 	string Line;
 	bool bFoundApiKey = false;
 
 	if (!FWakaTimeHelpers::PathExists(ConfigFilePath))
-		// if there is no .wakatime.cfg, open the settings window straight up
+	// if there is no .wakatime.cfg, open the settings window straight up
 	{
 		OpenSettingsWindow();
 		return;
@@ -200,7 +212,7 @@ void FWakaTimeForUE4Module::HandleStartupApiCheck(string ConfigFilePath)
 	}
 }
 
-void FWakaTimeForUE4Module::DownloadWakatimeCli(string CliPath)
+void FWakaTimeForUEModule::DownloadWakatimeCli(string CliPath)
 {
 	if (FWakaTimeHelpers::PathExists(CliPath))
 	{
@@ -231,7 +243,7 @@ void FWakaTimeForUE4Module::DownloadWakatimeCli(string CliPath)
 	}
 }
 
-string FWakaTimeForUE4Module::GetProjectName()
+string FWakaTimeForUEModule::GetProjectName()
 {
 	const TCHAR* ProjectName = FApp::GetProjectName();
 	string MainModuleName = TCHAR_TO_UTF8(ProjectName);
@@ -246,41 +258,29 @@ string FWakaTimeForUE4Module::GetProjectName()
 		return TCHAR_TO_UTF8(ProjectName);
 	}
 
-	return "Unreal Engine 4";
+	return "Unreal Engine";
 }
 
 
 // UI methods
 
-TSharedRef<FSlateStyleSet> FWakaTimeForUE4Module::CreateToolbarIcon()
+TSharedRef<FSlateStyleSet> FWakaTimeForUEModule::CreateToolbarIcon()
 {
 	TSharedRef<FSlateStyleSet> Style = MakeShareable(new FSlateStyleSet("WakaTime2DStyle"));
 
-	FString EngineDirectory;
 
-	if (FPaths::DirectoryExists(FPaths::EnginePluginsDir() / "WakaTimeForUE4-main"))
-	{
-		EngineDirectory = (FPaths::EnginePluginsDir() / "WakaTimeForUE4-main" / "Resources");
-		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Main detected"));
-	}
-	else if (FPaths::DirectoryExists(FPaths::EnginePluginsDir() / "WakaTimeForUE4-release"))
-	{
-		EngineDirectory = (FPaths::EnginePluginsDir() / "WakaTimeForUE4-release" / "Resources");
-		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Release detected"));
-	}
-	else
-	{
-		EngineDirectory = (FPaths::EnginePluginsDir() / "WakaTimeForUE4" / "Resources");
-		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Neither detected"));
-	}
+	FString ResourcesDirectory = IPluginManager::Get().FindPlugin(TEXT("WakaTimeForUE"))->GetBaseDir() + "/Resources";
+	UE_LOG(LogTemp, Warning, TEXT("%s"), *ResourcesDirectory);
 
 
-	Style->SetContentRoot(EngineDirectory);
-	Style->Set("mainIcon", new FSlateImageBrush(EngineDirectory + "/Icon128.png", FVector2D(40, 40), FSlateColor()));
+	Style->SetContentRoot(ResourcesDirectory);
+	Style->Set("mainIcon", new FSlateImageBrush(ResourcesDirectory + "/Icon128.png", FVector2D(40, 40),
+	                                            FSlateColor(FLinearColor(1, 1, 1))));
+
 	return Style;
 }
 
-void FWakaTimeForUE4Module::AddToolbarButton(FToolBarBuilder& Builder)
+void FWakaTimeForUEModule::AddToolbarButton(FToolBarBuilder& Builder)
 {
 	FSlateIcon Icon = FSlateIcon(TEXT("WakaTime2DStyle"), "mainIcon"); //Style.Get().GetStyleSetName(), "Icon128.png");
 
@@ -289,7 +289,7 @@ void FWakaTimeForUE4Module::AddToolbarButton(FToolBarBuilder& Builder)
 	                         Icon, NAME_None);
 }
 
-void FWakaTimeForUE4Module::OpenSettingsWindow()
+void FWakaTimeForUEModule::OpenSettingsWindow()
 {
 	SettingsWindow = SNew(SWindow)
 		.Title(FText::FromString(TEXT("WakaTime Settings")))
@@ -325,7 +325,7 @@ void FWakaTimeForUE4Module::OpenSettingsWindow()
 			[
 				SNew(SButton)
 				.Text(FText::FromString(TEXT("Save")))
-		.OnClicked(FOnClicked::CreateRaw(this, &FWakaTimeForUE4Module::SaveData))
+		.OnClicked(FOnClicked::CreateRaw(this, &FWakaTimeForUEModule::SaveData))
 			]
 		]
 	];
@@ -344,7 +344,7 @@ void FWakaTimeForUE4Module::OpenSettingsWindow()
 	}
 }
 
-FReply FWakaTimeForUE4Module::SaveData()
+FReply FWakaTimeForUEModule::SaveData()
 {
 	UE_LOG(LogTemp, Warning, TEXT("WakaTime: Saving settings"));
 
@@ -408,7 +408,7 @@ FReply FWakaTimeForUE4Module::SaveData()
 
 // Lifecycle methods
 
-void FWakaTimeForUE4Module::SendHeartbeat(bool bFileSave, string FilePath, string Activity)
+void FWakaTimeForUEModule::SendHeartbeat(bool bFileSave, string FilePath, string Activity)
 {
 	UE_LOG(LogTemp, Warning, TEXT("WakaTime: Sending Heartbeat"));
 
@@ -458,42 +458,49 @@ void FWakaTimeForUE4Module::SendHeartbeat(bool bFileSave, string FilePath, strin
 
 // Event methods
 
-void FWakaTimeForUE4Module::OnNewActorDropped(const TArray<UObject*>& Objects, const TArray<AActor*>& Actors)
+void FWakaTimeForUEModule::OnNewActorDropped(const TArray<UObject*>& Objects, const TArray<AActor*>& Actors)
 {
 	SendHeartbeat(false, GetProjectName(), "designing");
 }
 
-void FWakaTimeForUE4Module::OnDuplicateActorsEnd()
+void FWakaTimeForUEModule::OnDuplicateActorsEnd()
 {
 	SendHeartbeat(false, GetProjectName(), "designing");
 }
 
-void FWakaTimeForUE4Module::OnDeleteActorsEnd()
+void FWakaTimeForUEModule::OnDeleteActorsEnd()
 {
 	SendHeartbeat(false, GetProjectName(), "designing");
 }
 
-void FWakaTimeForUE4Module::OnAddLevelToWorld(ULevel* Level)
+void FWakaTimeForUEModule::OnAddLevelToWorld(ULevel* Level)
 {
 	SendHeartbeat(false, GetProjectName(), "designing");
 }
 
-void FWakaTimeForUE4Module::OnPostSaveWorld(uint32 SaveFlags, UWorld* World, bool bSucces)
-{
-	SendHeartbeat(true, GetProjectName(), "designing");
+#if ENGINE_MAJOR_VERSION == 5
+	void FWakaTimeForUEModule::OnPostSaveWorld(UWorld* World, FObjectPostSaveContext Context)
+	{
+		SendHeartbeat(true, GetProjectName(), "designing");
 }
+#else
+	void FWakaTimeForUEModule::OnPostSaveWorld(uint32 SaveFlags, UWorld* World, bool bSucces)
+	{
+		SendHeartbeat(true, GetProjectName(), "designing");
+	}
+#endif
 
-void FWakaTimeForUE4Module::OnPostPieStarted(bool bIsSimulating)
+void FWakaTimeForUEModule::OnPostPieStarted(bool bIsSimulating)
 {
 	SendHeartbeat(false, GetProjectName(), "debugging");
 }
 
-void FWakaTimeForUE4Module::OnPrePieEnded(bool bIsSimulating)
+void FWakaTimeForUEModule::OnPrePieEnded(bool bIsSimulating)
 {
 	SendHeartbeat(true, GetProjectName(), "debugging");
 }
 
-void FWakaTimeForUE4Module::OnBlueprintCompiled()
+void FWakaTimeForUEModule::OnBlueprintCompiled()
 {
 	SendHeartbeat(true, GetProjectName(), "coding");
 }
@@ -501,6 +508,6 @@ void FWakaTimeForUE4Module::OnBlueprintCompiled()
 
 #undef LOCTEXT_NAMESPACE
 
-IMPLEMENT_MODULE(FWakaTimeForUE4Module, WakaTimeForUE4)
+IMPLEMENT_MODULE(FWakaTimeForUEModule, WakaTimeForUE)
 
 #include "Windows/HideWindowsPlatformTypes.h"
