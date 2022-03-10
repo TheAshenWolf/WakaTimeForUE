@@ -258,7 +258,7 @@ string FWakaTimeForUEModule::GetProjectName()
 		return TCHAR_TO_UTF8(ProjectName);
 	}
 
-	return "Unreal Engine 4";
+	return "Unreal Engine";
 }
 
 
@@ -271,25 +271,6 @@ TSharedRef<FSlateStyleSet> FWakaTimeForUEModule::CreateToolbarIcon()
 
 	FString ResourcesDirectory = IPluginManager::Get().FindPlugin(TEXT("WakaTimeForUE"))->GetBaseDir() + "/Resources";
 	UE_LOG(LogTemp, Warning, TEXT("%s"), *ResourcesDirectory);
-
-
-	/*FString EngineDirectory;
-
-	if (FPaths::DirectoryExists(FPaths::EnginePluginsDir() / "WakaTimeForUE-main"))
-	{
-		EngineDirectory = (FPaths::EnginePluginsDir() / "WakaTimeForUE-main" / "Resources");
-		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Main detected"));
-	}
-	else if (FPaths::DirectoryExists(FPaths::EnginePluginsDir() / "WakaTimeForUE-release"))
-	{
-		EngineDirectory = (FPaths::EnginePluginsDir() / "WakaTimeForUE-release" / "Resources");
-		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Release detected"));
-	}
-	else
-	{
-		EngineDirectory = (FPaths::EnginePluginsDir() / "WakaTimeForUE" / "Resources");
-		UE_LOG(LogTemp, Warning, TEXT("WakaTime: Neither detected"));
-	}*/
 
 
 	Style->SetContentRoot(ResourcesDirectory);
