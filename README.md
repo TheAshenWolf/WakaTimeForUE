@@ -1,4 +1,4 @@
-# WakaTimeForUE4
+# WakaTimeForUE
 
 ![plugin version](https://img.shields.io/badge/version-1.2.3-blue) ![Unreal Engine version](https://img.shields.io/badge/Unreal%20Engine%20version-4.26+-blue) ![Platform support](https://img.shields.io/badge/Platform_support-Windows-blue)
 
@@ -17,9 +17,6 @@ This is my first ever project in C++, so it is definitely not perfect.
 If you have any suggestions how to improve it, or any bug reports, please, use the "Issues" tab.
 
 ### Troubleshooting
-Q: **The Wakatime icon in my editor is pink, what is wrong?**  
-A: Your plugin folder is most likely named something like `WakaTimeForUE-1.2.0`. Rename it to just `WakaTimeForUE` and it will be fine.
-
 Q: **The plugin failed to build.**  
 A: Branches other than `release` are development branches, so they might contain code that does not compile. If this happens on the `release` branch (or any version tag), make sure you have all dependencies required for building C++ code. You usually install all of them when installing Visual Studio and checking both C++ and .NET.
 
