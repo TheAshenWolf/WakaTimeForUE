@@ -1,22 +1,22 @@
 {
 	"FileVersion": 3,
 	"Version": 1,
-	"VersionName": "1.2.2",
-	"FriendlyName": "WakaTimeForUE4",
-	"Description": "WakaTime plugin for UE4. Contributions are welcome",
+	"VersionName": "1.2.3",
+	"FriendlyName": "WakaTimeForUE",
+	"Description": "WakaTime plugin for Unreal Engine. Contributions are welcome",
 	"Category": "Other",
 	"CreatedBy": "TheAshenWolf",
 	"CreatedByURL": "",
-	"DocsURL": "https://github.com/TheAshenWolf/WakaTimeForUE4",
+	"DocsURL": "https://github.com/TheAshenWolf/WakaTimeForUE",
 	"MarketplaceURL": "",
-	"SupportURL": "https://github.com/TheAshenWolf/WakaTimeForUE4/issues",
+	"SupportURL": "https://github.com/TheAshenWolf/WakaTimeForUE/issues",
 	"CanContainContent": false,
 	"IsBetaVersion": false,
 	"IsExperimentalVersion": false,
 	"Installed": false,
 	"Modules": [
 		{
-			"Name": "WakaTimeForUE4",
+			"Name": "WakaTimeForUE",
 			"Type": "EditorNoCommandlet",
 			"LoadingPhase": "PostEngineInit"
 		}

@@ -5,7 +5,7 @@
 #include <string>
 #include <Runtime/SlateCore/Public/Styling/SlateStyle.h>
 
-class FWakaTimeForUE4Module : public IModuleInterface
+class FWakaTimeForUEModule : public IModuleInterface
 {
 public:
 	// Module methods
@@ -111,7 +111,11 @@ public:
 	/// <summary>
 	///	Event called when the world is saved (Generally CTRL + S while in the viewport window)
 	/// </summary>
+#if ENGINE_MAJOR_VERSION == 5
+	void OnPostSaveWorld(UWorld* World, FObjectPostSaveContext Context);
+#else
 	void OnPostSaveWorld(uint32 SaveFlags, UWorld* World, bool bSucces);
+#endif
 
 	/// <summary>
 	///	Event called after clicking play in the editor

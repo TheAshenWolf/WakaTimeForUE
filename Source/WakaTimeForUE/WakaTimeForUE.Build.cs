@@ -2,9 +2,9 @@
 
 using UnrealBuildTool;
 
-public class WakaTimeForUE4 : ModuleRules
+public class WakaTimeForUE : ModuleRules
 {
-	public WakaTimeForUE4(ReadOnlyTargetRules Target) : base(Target)
+	public WakaTimeForUE(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 		
@@ -41,7 +41,8 @@ public class WakaTimeForUE4 : ModuleRules
 				"LevelEditor",
 				"EditorStyle",
 				"EngineSettings",
-				"UnrealEd"
+				"UnrealEd",
+				"Projects"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
