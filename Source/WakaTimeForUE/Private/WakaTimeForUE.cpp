@@ -1,4 +1,3 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
 // ReSharper disable CppParameterMayBeConst
 // ReSharper disable CppLocalVariableMayBeConst
 #include "WakaTimeForUE.h"
