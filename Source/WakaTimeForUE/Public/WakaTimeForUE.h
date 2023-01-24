@@ -2,6 +2,9 @@
 
 #include <string>
 #include <Runtime/SlateCore/Public/Styling/SlateStyle.h>
+#include "EditorStyleSet.h"
+
+DECLARE_LOG_CATEGORY_EXTERN(LogWakaTime, Log, All);
 
 class FWakaTimeForUEModule : public IModuleInterface
 {
