@@ -23,7 +23,7 @@ bool FWakaTimeHelpers::RunCommand(std::string CommandToRun, bool bRequireNonZero
 		CommandToRun = " /c start /b " + CommandToRun;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("Running command: %s"), *FString(UTF8_TO_TCHAR(CommandToRun.c_str())));
+	UE_LOG(LogTemp, Log, TEXT("WakaTime: Running command: %s"), *FString(UTF8_TO_TCHAR(CommandToRun.c_str())));
 
 	STARTUPINFO Startupinfo;
 	PROCESS_INFORMATION Process_Information;
