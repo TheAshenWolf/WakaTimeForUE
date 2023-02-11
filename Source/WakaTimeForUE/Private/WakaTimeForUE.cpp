@@ -42,6 +42,8 @@ TSharedRef<SWindow> SettingsWindow = SNew(SWindow);
 TSharedPtr<FSlateStyleSet> StyleSetInstance = nullptr;
 
 
+DEFINE_LOG_CATEGORY(LogWakaTime);
+
 // Module methods
 
 void FWakaTimeForUEModule::StartupModule()
@@ -54,13 +56,13 @@ void FWakaTimeForUEModule::StartupModule()
 		"where /r " + string(GUserProfile) + "\\.wakatime\\" + GWakaCliVersion,
 		true))
 	{
-		UE_LOG(LogTemp, Log, TEXT("WakaTime: Found IDE wakatime-cli"));
+		UE_LOG(LogWakaTime, Log, TEXT("Found IDE wakatime-cli"));
 		GBaseCommand = (string(GUserProfile) + "\\.wakatime\\" + GWakaCliVersion);
 	}
 	else
 	{
 		// neither way was found; download and install the new version
-		UE_LOG(LogTemp, Log, TEXT("WakaTime: Did not find wakatime"));
+		UE_LOG(LogWakaTime, Log, TEXT("Did not find wakatime"));
 		GBaseCommand = "/c start \"\" /b \"" + string(GUserProfile) + "\\.wakatime\\" +
 			GWakaCliVersion + "\"";
 		string FolderPath = string(GUserProfile) + "\\.wakatime";
@@ -108,7 +110,7 @@ void FWakaTimeForUEModule::StartupModule()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("WakaTime: No GEditor present"));
+		UE_LOG(LogWakaTime, Error, TEXT("No GEditor present"));
 	}
 
 	FWakaCommands::Register();
@@ -215,11 +217,11 @@ void FWakaTimeForUEModule::DownloadWakatimeCli(string CliPath)
 {
 	if (FWakaTimeHelpers::PathExists(CliPath))
 	{
-		UE_LOG(LogTemp, Log, TEXT("WakaTime: CLI found"));
+		UE_LOG(LogWakaTime, Log, TEXT("CLI found"));
 		return; // if CLI exists, no need to change anything
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("WakaTime: CLI not found, attempting download."));
+	UE_LOG(LogWakaTime, Log, TEXT("CLI not found, attempting download."));
 
 	string URL = "https://github.com/wakatime/wakatime-cli/releases/download/v1.18.9/wakatime-cli-windows-" +
 		GWakatimeArchitecture + ".zip";
@@ -230,15 +232,15 @@ void FWakaTimeForUEModule::DownloadWakatimeCli(string CliPath)
 
 	if (bSuccessDownload)
 	{
-		UE_LOG(LogTemp, Log, TEXT("WakaTime: Successfully downloaded wakatime-cli.zip"));
+		UE_LOG(LogWakaTime, Log, TEXT("Successfully downloaded wakatime-cli.zip"));
 		bool bSuccessUnzip = FWakaTimeHelpers::UnzipArchive(LocalZipFilePath,
 		                                                    string(GUserProfile) + "/.wakatime");
 
-		if (bSuccessUnzip) UE_LOG(LogTemp, Log, TEXT("WakaTime: Successfully extracted wakatime-cli."));
+		if (bSuccessUnzip) UE_LOG(LogWakaTime, Log, TEXT("Successfully extracted wakatime-cli."));
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("WakaTime: Error downloading python. Please, install it manually."));
+		UE_LOG(LogWakaTime, Error, TEXT("Error downloading python. Please, install it manually."));
 	}
 }
 
@@ -269,7 +271,7 @@ TSharedRef<FSlateStyleSet> FWakaTimeForUEModule::CreateToolbarIcon()
 
 
 	FString ResourcesDirectory = IPluginManager::Get().FindPlugin(TEXT("WakaTimeForUE"))->GetBaseDir() + "/Resources";
-	UE_LOG(LogTemp, Log, TEXT("%s"), *ResourcesDirectory);
+	UE_LOG(LogWakaTime, Log, TEXT("%s"), *ResourcesDirectory);
 
 
 	Style->SetContentRoot(ResourcesDirectory);
@@ -345,7 +347,7 @@ void FWakaTimeForUEModule::OpenSettingsWindow()
 
 FReply FWakaTimeForUEModule::SaveData()
 {
-	UE_LOG(LogTemp, Log, TEXT("WakaTime: Saving settings"));
+	UE_LOG(LogWakaTime, Log, TEXT("Saving settings"));
 
 	string APIKeyBase = TCHAR_TO_UTF8(*(GAPIKeyBlock.Get().GetText().ToString()));
 	GAPIKey = APIKeyBase.substr(APIKeyBase.find(" = ") + 1);
@@ -409,7 +411,7 @@ FReply FWakaTimeForUEModule::SaveData()
 
 void FWakaTimeForUEModule::SendHeartbeat(bool bFileSave, string FilePath, string Activity)
 {
-	UE_LOG(LogTemp, Log, TEXT("WakaTime: Sending Heartbeat"));
+	UE_LOG(LogWakaTime, Log, TEXT("Sending Heartbeat"));
 
 	string Command = GBaseCommand;
 
@@ -431,7 +433,6 @@ void FWakaTimeForUEModule::SendHeartbeat(bool bFileSave, string FilePath, string
 		Command += "--write";
 	}
 
-	//UE_LOG(LogTemp, Log, TEXT("%s"), *FString(UTF8_TO_TCHAR(command.c_str())));
 	bool bSuccess = false;
 	try
 	{
@@ -439,19 +440,19 @@ void FWakaTimeForUEModule::SendHeartbeat(bool bFileSave, string FilePath, string
 	}
 	catch (int Err)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%i"), Err);
+		UE_LOG(LogWakaTime, Warning, TEXT("%i"), Err);
 	}
 
 	//bool success = RunCommand(command, false, baseCommand,INFINITE, true);
 
 	if (bSuccess)
 	{
-		UE_LOG(LogTemp, Log, TEXT("WakaTime: Heartbeat successfully sent."));
+		UE_LOG(LogWakaTime, Log, TEXT("Heartbeat successfully sent."));
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("WakaTime: Heartbeat couldn't be sent."));
-		UE_LOG(LogTemp, Error, TEXT("WakaTime: Error code = %d"), GetLastError());
+		UE_LOG(LogWakaTime, Error, TEXT("Heartbeat couldn't be sent."));
+		UE_LOG(LogWakaTime, Error, TEXT("Error code = %d"), GetLastError());
 	}
 }
 

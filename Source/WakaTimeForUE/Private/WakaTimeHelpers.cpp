@@ -23,7 +23,7 @@ bool FWakaTimeHelpers::RunCommand(std::string CommandToRun, bool bRequireNonZero
 		CommandToRun = " /c start /b " + CommandToRun;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("Running command: %s"), *FString(UTF8_TO_TCHAR(CommandToRun.c_str())));
+	UE_LOG(LogWakaTime, Log, TEXT("Running command: %s"), *FString(UTF8_TO_TCHAR(CommandToRun.c_str())));
 
 	STARTUPINFO Startupinfo;
 	PROCESS_INFORMATION Process_Information;
@@ -101,6 +101,6 @@ bool FWakaTimeHelpers::DownloadFile(std::string URL, std::string SaveTo)
 		+
 		SaveTo + "')\"";
 
-	UE_LOG(LogTemp, Warning, TEXT("%s"), *FString(UTF8_TO_TCHAR(DownloadCommand.c_str())));
+	UE_LOG(LogWakaTime, Warning, TEXT("%s"), *FString(UTF8_TO_TCHAR(DownloadCommand.c_str())));
 	return RunPowershellCommand(DownloadCommand, false, INFINITE, true);
 }
