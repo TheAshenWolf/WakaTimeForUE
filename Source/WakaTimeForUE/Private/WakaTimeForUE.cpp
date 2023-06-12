@@ -92,9 +92,9 @@ void FWakaTimeForUEModule::StartupModule()
 		this, &FWakaTimeForUEModule::OnDuplicateActorsEnd);
 	AddLevelToWorldHandle = FEditorDelegates::OnAddLevelToWorld.AddRaw(this, &FWakaTimeForUEModule::OnAddLevelToWorld);
 
-#if ENGINE_MAJOR_VERSION == 5
+#if ENGINE_MAJOR_VERSION >= 5
 	PostSaveWorldHandle = FEditorDelegates::PostSaveWorldWithContext.AddRaw(this, &FWakaTimeForUEModule::OnPostSaveWorld);
-#else
+#else// TheAshenWolf(PostSaveWorld is deprecated as of UE5)
 	PostSaveWorldHandle = FEditorDelegates::PostSaveWorld.AddRaw(this, &FWakaTimeForUEModule::OnPostSaveWorld);
 #endif
 
@@ -143,7 +143,11 @@ void FWakaTimeForUEModule::ShutdownModule()
 	FEditorDelegates::OnDeleteActorsEnd.Remove(DeleteActorsEndHandle);
 	FEditorDelegates::OnDuplicateActorsEnd.Remove(DuplicateActorsEndHandle);
 	FEditorDelegates::OnAddLevelToWorld.Remove(AddLevelToWorldHandle);
+#if ENGINE_MAJOR_VERSION >= 5
+	FEditorDelegates::PostSaveWorldWithContext.Remove(PostSaveWorldHandle);
+#else // TheAshenWolf(PostSaveWorld is deprecated as of UE5)
 	FEditorDelegates::PostSaveWorld.Remove(PostSaveWorldHandle);
+#endif
 	FEditorDelegates::PostPIEStarted.Remove(GPostPieStartedHandle);
 	FEditorDelegates::PrePIEEnded.Remove(GPrePieEndedHandle);
 	if (GEditor)
