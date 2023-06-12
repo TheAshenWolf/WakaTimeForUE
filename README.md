@@ -1,6 +1,6 @@
 # WakaTimeForUE
 
-![plugin version](https://img.shields.io/badge/version-1.2.3-blue) ![Unreal Engine version](https://img.shields.io/badge/Unreal%20Engine%20version-4.26+-blue) ![Platform support](https://img.shields.io/badge/Platform_support-Windows-blue)
+![plugin version](https://img.shields.io/badge/version-1.2.4-blue) ![Unreal Engine version](https://img.shields.io/badge/Unreal%20Engine%20version-4.26+-blue) ![Platform support](https://img.shields.io/badge/Platform_support-Windows-blue)
 
 ---
 
