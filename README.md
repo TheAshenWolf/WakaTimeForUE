@@ -28,17 +28,5 @@ A: Short answer: Yes. Long answer: It should. You might need to rebuild the plug
 
 ---
 ## Contributors
-I'd like to thank all of these people for what they did. They helped me to get this plugin to the stage where it is right now.
-
-<a href="https://github.com/ghost">
-    <img src="https://github.com/ghost.png" width="64" height="64" alt="ghost" title="A person who helped us solve many warnings regarding macros.">
-</a>
-
-<a href="https://github.com/simonSlamka">
-    <img src="https://github.com/simonSlamka.png" width="64" height="64" alt="simonSlamka" title="simonSlamka - Helped me and motivated me to finish the version 1.2.0">
-</a>
-
-<a href="https://github.com/Coolicky">
-    <img src="https://github.com/Coolicky.png" width="64" height="64" alt="Coolicky" title="Coolicky - Updated env variables for better compatibility with different permissions and improved compatibility with other wakatime plugins">
-</a>
+Thank you to all of you. You have been a huge help.
 
