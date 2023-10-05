@@ -10,7 +10,7 @@
    2.1. Your folder structure should be ...\Engine\Plugins\WakaTimeForUE\
    2.2. Within this folder resides WakaTimeForUE.uplugin and other files
 3. Run the engine
-4. If you already used wakatime elsewhere, your api key gets loaded. If not, you get prompted by a window.
+4. If you already used wakatime elsewhere, your api key gets loaded. If not, you get prompted by a window.  
    4.1. In recent changes, API key on the website appears in format `waka_[apiKey]`, in order for this to work, remove the `waka_` prefix.
 
 ### Notice
