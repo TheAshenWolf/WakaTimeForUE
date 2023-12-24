@@ -170,10 +170,11 @@ void FWakaCommands::RegisterCommands()
 void FWakaTimeForUEModule::AssignGlobalVariables()
 {
 	// use _dupenv_s instead of getenv, as it is safer
-	GUserProfile = "c:";
+	GUserProfile = _strdup("c:");
 	size_t LenDrive = NULL;
 	_dupenv_s(&GUserProfile, &LenDrive, "USERPROFILE");
-
+	free(GUserProfile);
+	
 	/*string profile = GUserProfile;
 	profile.insert(0, 1, '"');
 	profile.append("\"");
