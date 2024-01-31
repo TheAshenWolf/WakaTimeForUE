@@ -173,7 +173,6 @@ void FWakaTimeForUEModule::AssignGlobalVariables()
 	GUserProfile = _strdup("c:");
 	size_t LenDrive = NULL;
 	_dupenv_s(&GUserProfile, &LenDrive, "USERPROFILE");
-	free(GUserProfile);
 	
 	/*string profile = GUserProfile;
 	profile.insert(0, 1, '"');
